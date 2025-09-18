@@ -278,6 +278,15 @@ def update_quote(quote_id):
         )
         line_item.extended_price = line_item.quantity * line_item.discounted_price
         quote.items.append(line_item)
+        
+        # Add subcomponents if they exist
+        for subcomponent_data in item_data.get('subcomponents', []):
+            from models import Subcomponent
+            subcomponent = Subcomponent(
+                description=subcomponent_data['description'],
+                quantity=int(subcomponent_data.get('quantity', 1))
+            )
+            line_item.subcomponents.append(subcomponent)
 
     db.session.commit()
     return jsonify({'message': 'Quote updated successfully'})

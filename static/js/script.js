@@ -242,6 +242,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         addSection(item.title);
                     } else if (item.type === 'item') {
                         addItem(item);
+                        // Add subcomponents if they exist
+                        if (item.subcomponents && item.subcomponents.length > 0) {
+                            const itemElements = itemsContainer.querySelectorAll('.line-item');
+                            const lastItemElement = itemElements[itemElements.length - 1];
+                            const itemId = lastItemElement.id;
+                            
+                            item.subcomponents.forEach(subcomponent => {
+                                addSubcomponent(itemId, subcomponent);
+                            });
+                        }
                     }
                 });
                 // Ensure all sections remain editable after population
