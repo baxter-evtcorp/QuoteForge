@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
         itemsContainer.addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-item-btn')) {
                 if (confirm('Are you sure you want to delete this item?')) {
-                    e.target.closest('.line-item').remove();
+                    e.target.closest('.item-wrapper').remove();
                 }
             } else if (e.target.classList.contains('remove-section-btn')) {
                 if (confirm('Are you sure you want to delete this entire section and all its items?')) {
@@ -58,10 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Toggle subcomponents visibility
                 const itemRow = e.target.closest('.line-item');
                 const itemId = itemRow.id;
+                console.log('Toggle subcomponents for item:', itemId);
                 toggleSubcomponents(itemId);
             } else if (e.target.classList.contains('add-subcomponent-btn')) {
                 // Add subcomponent to specific item
                 const itemId = e.target.getAttribute('data-item-id');
+                console.log('Add subcomponent to item:', itemId);
                 addSubcomponent(itemId);
             } else if (e.target.classList.contains('remove-subcomponent-btn')) {
                 // Remove subcomponent
@@ -338,37 +340,44 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please add a section first.');
             return;
         }
-        const itemId = `item-${Date.now()}`;
+        const itemId = `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         targetSection.insertAdjacentHTML('beforeend', `
-            <div class="item-row line-item" id="${itemId}" data-type="item">
-                <input type="text" name="part_number[]" placeholder="Part #" value="${item.part_number || ''}">
-                <input type="text" name="description[]" placeholder="Description" value="${item.description || ''}">
-                <input type="text" name="item_type[]" placeholder="Type" value="${item.item_type || ''}">
-                <input type="number" class="unit-price" placeholder="Unit Price" step="0.01" value="${item.unit_price || ''}">
-                <input type="number" class="quantity" placeholder="Qty" value="${item.quantity || ''}">
-                <input type="number" class="discounted-price" placeholder="Discounted" step="0.01" value="${item.discounted_price || ''}">
-                <div class="item-actions">
-                    <button type="button" class="subcomponent-toggle-btn" title="Manage Subcomponents">📋</button>
-                    <button type="button" class="remove-btn remove-item-btn">Remove</button>
+            <div class="item-wrapper" id="wrapper-${itemId}">
+                <div class="item-row line-item" id="${itemId}" data-type="item">
+                    <input type="text" name="part_number[]" placeholder="Part #" value="${item.part_number || ''}">
+                    <input type="text" name="description[]" placeholder="Description" value="${item.description || ''}">
+                    <input type="text" name="item_type[]" placeholder="Type" value="${item.item_type || ''}">
+                    <input type="number" class="unit-price" placeholder="Unit Price" step="0.01" value="${item.unit_price || ''}">
+                    <input type="number" class="quantity" placeholder="Qty" value="${item.quantity || ''}">
+                    <input type="number" class="discounted-price" placeholder="Discounted" step="0.01" value="${item.discounted_price || ''}">
+                    <div class="item-actions">
+                        <button type="button" class="subcomponent-toggle-btn" title="Manage Subcomponents">📋</button>
+                        <button type="button" class="remove-btn remove-item-btn">Remove</button>
+                    </div>
                 </div>
-            </div>
-            <div class="subcomponents-container" id="subcomponents-${itemId}" style="display: none;">
-                <div class="subcomponents-header">
-                    <h4>Subcomponents</h4>
-                    <button type="button" class="add-subcomponent-btn" data-item-id="${itemId}">Add Subcomponent</button>
-                </div>
-                <div class="subcomponents-list" id="subcomponents-list-${itemId}">
-                    <!-- Subcomponents will be added here -->
+                <div class="subcomponents-container" id="subcomponents-${itemId}" style="display: none;">
+                    <div class="subcomponents-header">
+                        <h4>Subcomponents</h4>
+                        <button type="button" class="add-subcomponent-btn" data-item-id="${itemId}">Add Subcomponent</button>
+                    </div>
+                    <div class="subcomponents-list" id="subcomponents-list-${itemId}">
+                        <!-- Subcomponents will be added here -->
+                    </div>
                 </div>
             </div>
         `);
     }
 
     function addSubcomponent(itemId, subcomponent = {}) {
+        console.log('Looking for subcomponents-list-' + itemId);
         const subcomponentsList = document.getElementById(`subcomponents-list-${itemId}`);
-        if (!subcomponentsList) return;
+        console.log('Found subcomponents list:', subcomponentsList);
+        if (!subcomponentsList) {
+            console.error('Could not find subcomponents list for item:', itemId);
+            return;
+        }
 
-        const subcomponentId = `subcomponent-${Date.now()}`;
+        const subcomponentId = `subcomponent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const subcomponentHTML = `
             <div class="subcomponent-row" id="${subcomponentId}">
                 <input type="text" class="subcomponent-description" placeholder="Subcomponent description" value="${subcomponent.description || ''}" data-item-id="${itemId}">
@@ -431,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             sectionBlock.querySelectorAll('.line-item').forEach(itemRow => {
-                data.items.push({
+                const itemData = {
                     type: 'item',
                     part_number: itemRow.querySelector('[name="part_number[]"]').value,
                     description: itemRow.querySelector('[name="description[]"]').value,
@@ -439,7 +448,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     unit_price: itemRow.querySelector('.unit-price').value,
                     quantity: itemRow.querySelector('.quantity').value,
                     discounted_price: itemRow.querySelector('.discounted-price').value,
-                });
+                    subcomponents: []
+                };
+
+                // Collect subcomponents for this item
+                const itemId = itemRow.id;
+                const subcomponentsList = document.getElementById(`subcomponents-list-${itemId}`);
+                if (subcomponentsList) {
+                    subcomponentsList.querySelectorAll('.subcomponent-row').forEach(subRow => {
+                        const description = subRow.querySelector('.subcomponent-description').value;
+                        const quantity = subRow.querySelector('.subcomponent-quantity').value;
+                        if (description.trim()) {
+                            itemData.subcomponents.push({
+                                description: description,
+                                quantity: parseInt(quantity) || 1
+                            });
+                        }
+                    });
+                }
+
+                data.items.push(itemData);
             });
         });
 

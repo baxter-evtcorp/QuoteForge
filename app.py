@@ -115,6 +115,15 @@ def create_quote():
         )
         line_item.extended_price = line_item.quantity * line_item.discounted_price
         new_quote.items.append(line_item)
+        
+        # Add subcomponents if they exist
+        for subcomponent_data in item_data.get('subcomponents', []):
+            from models import Subcomponent
+            subcomponent = Subcomponent(
+                description=subcomponent_data['description'],
+                quantity=int(subcomponent_data.get('quantity', 1))
+            )
+            line_item.subcomponents.append(subcomponent)
 
     db.session.add(new_quote)
     db.session.commit()
@@ -214,7 +223,12 @@ def get_quote(quote_id):
             'unit_price': item.unit_price,
             'quantity': item.quantity,
             'discounted_price': item.discounted_price,
-            'extended_price': item.extended_price
+            'extended_price': item.extended_price,
+            'subcomponents': [{
+                'id': sub.id,
+                'description': sub.description,
+                'quantity': sub.quantity
+            } for sub in item.subcomponents]
         } for item in quote.items]
     }
     return jsonify(quote_data)

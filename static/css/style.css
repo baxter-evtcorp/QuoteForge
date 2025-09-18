@@ -232,7 +232,11 @@ textarea {
     background-color: #218838;
 }
 
-/* Subcomponent Styles */
+/* Item Wrapper and Subcomponent Styles */
+.item-wrapper {
+    margin-bottom: 5px;
+}
+
 .item-actions {
     display: flex;
     gap: 5px;
@@ -258,7 +262,7 @@ textarea {
     background: #f8f9fa;
     border: 1px solid #e9ecef;
     border-radius: 4px;
-    margin: 5px 0 15px 20px;
+    margin: 5px 0 10px 0;
     padding: 10px;
 }
 

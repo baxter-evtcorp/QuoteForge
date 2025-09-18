@@ -113,6 +113,14 @@
         .subtotal-row {
             background-color: transparent !important;
         }
+        .subcomponent-row {
+            background-color: #f8f9fa !important;
+        }
+        .subcomponent-desc {
+            font-style: italic;
+            color: #6c757d;
+            padding-left: 15px;
+        }
         .items-table .part-number, .items-table .quantity { text-align: center; }
         .items-table .unit-price { text-align: right; }
         .items-table .discounted-price, .items-table .extended-price { text-align: center; }
@@ -296,6 +304,19 @@
                             <td class="discounted-price">${{ "{:,.2f}".format(item.discounted_price|float) }}</td>
                             <td class="extended-price">${{ "{:,.2f}".format(item.extended_price|float) }}</td>
                         </tr>
+                        {% if item.subcomponents %}
+                            {% for subcomponent in item.subcomponents %}
+                                <tr class="subcomponent-row">
+                                    <td class="part-number"></td>
+                                    <td class="description subcomponent-desc">↳ {{ subcomponent.description }}</td>
+                                    <td></td>
+                                    <td class="unit-price"></td>
+                                    <td class="quantity">{{ subcomponent.quantity }}</td>
+                                    <td class="discounted-price"></td>
+                                    <td class="extended-price"></td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
                         {% set section_total.value = section_total.value + (item.extended_price|float) %}
                         {% set grand_total.value = grand_total.value + (item.extended_price|float) %}
                     {% endif %}
