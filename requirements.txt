@@ -1,0 +1,4 @@
+Flask
+WeasyPrint
+Flask-SQLAlchemy
+python-dateutil

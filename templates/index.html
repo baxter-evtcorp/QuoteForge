@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuoteForge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QuoteForge</h1>
+            <p>Create and export professional quotes and purchase orders.</p>
+        </header>
+        <main>
+            <div class="action-bar">
+                <button type="button" id="new-quote-btn" class="secondary-btn">New Document</button>
+                <button type="button" id="manage-docs-btn" class="secondary-btn">Manage Documents</button>
+            </div>
+            
+            <div id="form-view" class="view-container">
+                <form id="quote-form">
+                <div class="form-section">
+                    <h2>Document Type</h2>
+                    <div class="switch-field">
+                        <input type="radio" id="doc_type_quote" name="document_type" value="quote" checked>
+                        <label for="doc_type_quote">Quote</label>
+                        <input type="radio" id="doc_type_po" name="document_type" value="po">
+                        <label for="doc_type_po">Purchase Order</label>
+                    </div>
+                </div>
+
+
+
+                <div class="form-section" id="company-details-section">
+                    <h2>Company Details</h2>
+                    <label for="company_logo">Company Logo:</label>
+                    <input type="file" id="company_logo" name="company_logo" accept="image/*">
+                </div>
+
+                <div class="form-section">
+                    <h2>Document Details</h2>
+                    <input type="text" id="quote_name" name="quote_name" placeholder="Quote Name">
+                    <input type="date" id="quote_date" name="quote_date">
+                </div>
+
+                <div class="form-section">
+                    <h2>Line Items</h2>
+                    <div id="items-container"></div>
+                    <div class="item-controls">
+                        <button type="button" id="add-section-btn">Add Section</button>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>Notes / Footer</h2>
+                    <textarea id="notes" name="notes" placeholder="Terms and conditions, notes, etc."></textarea>
+                </div>
+
+                <button type="submit" id="generate-pdf-btn">Save Document</button>
+                </form>
+            </div>
+            
+            <div id="manage-view" class="view-container" style="display: none;">
+                <h2>Manage Documents</h2>
+                <div id="quote-list-container"></div>
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

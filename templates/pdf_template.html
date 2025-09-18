@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ data.doc_type_display }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2.0cm;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+                header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #555;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: flex;
+            align-items: flex-start;
+        }
+        .logo {
+            height: 70px;
+            margin-right: 15px;
+        }
+        .company-and-supplier-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .company-info-main {
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: right;
+            margin-top: 10px;
+        }
+        .supplier-info {
+            font-size: 10px;
+            line-height: 1.4;
+            margin-top: 10px;
+            color: #555;
+            text-align: left;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .header-right h1 {
+            font-size: 28px;
+            color: #333;
+            margin: 0;
+            line-height: 1;
+        }
+        .quote-title-main {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        .info-table {
+            width: 100%;
+            margin-bottom: 30px;
+            border-collapse: collapse;
+        }
+        .info-box {
+            padding-bottom: 20px;
+            vertical-align: top;
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: left;
+        }
+        .section-title-pdf {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            table-layout: fixed;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        .items-table td {
+            font-size: 6.5pt;
+        }
+        .items-table th {
+            background-color: #f2f2f2; /* Light grey background */
+            color: #000; /* Black font */
+            font-weight: bold;
+            font-size: 7.5pt;
+        }
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .subtotal-row {
+            background-color: transparent !important;
+        }
+        .items-table .part-number, .items-table .quantity { text-align: center; }
+        .items-table .unit-price { text-align: right; }
+        .items-table .discounted-price, .items-table .extended-price { text-align: center; }
+        .items-table .description { width: 28%; }
+        .items-table .part-number { width: 14%; }
+        .items-table .item-type { width: 9%; }
+        .items-table .unit-price { width: 13%; }
+        .items-table .quantity { width: 7%; }
+        .items-table .discounted-price { width: 14%; }
+        .items-table .extended-price { width: 15%; }
+        .items-table td { word-wrap: break-word; }
+        .subtotal-row td {
+            font-weight: bold;
+            border: none;
+            padding-top: 10px;
+            font-size: 8pt;
+            white-space: nowrap;
+            background-color: transparent !important;
+        }
+        .subtotal-label {
+            text-align: right;
+        }
+        .subtotal-value {
+            text-align: right;
+        }
+        .grand-total-table {
+            width: 100%;
+            margin-top: 30px;
+        }
+        .grand-total-table td {
+            padding: 10px;
+            font-size: 14px;
+        }
+        .grand-total-table .total-label {
+            text-align: right;
+            font-weight: bold;
+        }
+        .grand-total-table .total-value {
+            text-align: right;
+            font-weight: bold;
+            border-top: 1px solid #555;
+            padding-top: 8px;
+        }
+        footer {
+            margin-top: 40px;
+            font-size: 11px;
+            color: #555;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+        }
+        footer p {
+            white-space: pre-wrap;
+        }
+        
+    </style>
+</head>
+<body>
+        <header>
+        <div class="header-left">
+            <div class="company-and-supplier-info">
+                {% if data.logo_base64 %}
+                    <img src="data:image/png;base64,{{ data.logo_base64 }}" alt="Company Logo" class="logo">
+                {% else %}
+                    <img src="{{ url_for('static', filename='images/EVT_logo_HiRes.jpg', _external=True) }}" alt="Company Logo" class="logo">
+                {% endif %}
+                <div class="supplier-info">
+                    {% if data.document_type == 'po' %}
+                        <strong>EVT PO #:</strong> {{ data.doc_number }}<br>
+                        <strong>PO Date:</strong> {{ data.document_date }}<br>
+                        <strong>Payment Terms:</strong> {{ data.payment_terms }}
+                    {% else %}
+                        <strong>Supplier #:</strong> 1206055<br>
+                        <strong>CW #:</strong> CW482112<br>
+                        <strong>MA #:</strong> MA-0010777-2014
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <h1>{{ data.doc_type_display | upper }}</h1>
+            <div class="company-info-main">
+                <strong>Enterprise Vision Technologies</strong><br>
+                201 Wilshire Blvd, Suite A-9<br>
+                Santa Monica, CA 90401<br>
+                Phone: (214)517-0666<br>
+                Email: bconley@evtcorp.com
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% if data.document_type == 'po' %}
+        <table class="info-table">
+            <tr>
+                <td class="info-box" style="width: 50%;">
+                    <strong>Shipping To:</strong><br>
+                    {{ data.shipping_name }}<br>
+                    {{ data.shipping_address }}<br>
+                    {{ data.shipping_city_state_zip }}
+                </td>
+                <td class="info-box" style="width: 50%;">
+                    <strong>Billing To:</strong><br>
+                    {{ data.billing_name }}<br>
+                    {{ data.billing_address }}<br>
+                    {{ data.billing_city_state_zip }}
+                </td>
+            </tr>
+        </table>
+        <table class="info-table">
+            <tr>
+                <td class="info-box" style="width: 50%;">
+                    <strong>Supplier Name:</strong> {{ data.supplier_name }}<br>
+                    <strong>Supplier Quote:</strong> {{ data.supplier_quote }}<br>
+                    <strong>Supplier Contact:</strong> {{ data.supplier_contact }}
+                </td>
+                <td class="info-box" style="width: 50%;">
+                    <strong>End User:</strong> {{ data.end_user_name }}<br>
+                    <strong>End User PO:</strong> {{ data.end_user_po }}<br>
+                    <strong>End User Contact:</strong> {{ data.end_user_contact }}
+                </td>
+            </tr>
+        </table>
+
+        {% else %}
+        <div class="quote-title-main">
+            Customer Quote For Walmart, Inc.
+        </div>
+        <table class="info-table">
+            <tr>
+                <td class="info-box">
+                    <strong>Quote #:</strong> {{ data.doc_number }}<br>
+                    <strong>Quote Name:</strong> {{ data.document_name }}<br>
+                    <strong>Quote Date:</strong> {{ data.document_date }}<br>
+                    <strong>Expiration Date:</strong> {{ data.expiration_date }}
+                </td>
+            </tr>
+        </table>
+        {% endif %}
+
+        {% if data.document_type == 'quote' %}
+            {% set grand_total = namespace(value=0) %}
+            {% if data['items'] %}
+                {% set section_total = namespace(value=0) %}
+                {% set table_open = namespace(value=false) %}
+                {% for item in data['items'] %}
+                    {% if item.type == 'section' %}
+                        {% if table_open.value %}
+                            {# End the previous table body and table #}
+                            <tr class="subtotal-row">
+                                <td colspan="6" class="subtotal-label">Section Subtotal:</td>
+                                <td class="subtotal-value">${{ "{:,.2f}".format(section_total.value) }}</td>
+                            </tr>
+                            </tbody>
+                            </table>
+                            {% set table_open.value = false %}
+                        {% endif %}
+                        {# Start a new section #}
+                        {% set section_total.value = 0 %}
+                        <h2 class="section-title-pdf">{{ item.title }}</h2>
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th class="part-number">Part #</th>
+                                    <th class="description">Description</th>
+                                    <th class="item-type">Type</th>
+                                    <th class="unit-price">Unit Price</th>
+                                    <th class="quantity">Qty</th>
+                                    <th class="discounted-price">Discounted Price</th>
+                                    <th class="extended-price">Extended Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        {% set table_open.value = true %}
+                    {% elif item.type == 'item' %}
+                        <tr>
+                            <td class="part-number">{{ item.part_number or '' }}</td>
+                            <td class="description">{{ item.description or '' }}</td>
+                            <td>{{ item.item_type or '' }}</td>
+                            <td class="unit-price">${{ "{:,.2f}".format(item.unit_price|float) }}</td>
+                            <td class="quantity">{{ item.quantity }}</td>
+                            <td class="discounted-price">${{ "{:,.2f}".format(item.discounted_price|float) }}</td>
+                            <td class="extended-price">${{ "{:,.2f}".format(item.extended_price|float) }}</td>
+                        </tr>
+                        {% set section_total.value = section_total.value + (item.extended_price|float) %}
+                        {% set grand_total.value = grand_total.value + (item.extended_price|float) %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if table_open.value %}
+                {# Close the last section's table #}
+                <tr class="subtotal-row">
+                    <td colspan="6" class="subtotal-label">Section Subtotal:</td>
+                    <td class="subtotal-value">${{ "{:,.2f}".format(section_total.value) }}</td>
+                </tr>
+                </tbody>
+                </table>
+                {% endif %}
+            {% endif %}
+
+            <table class="grand-total-table">
+                <tfoot>
+                    <tr>
+                        <td colspan="6" class="total-label">Grand Total:</td>
+                        <td class="total-value">${{ "{:,.2f}".format(grand_total.value) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% elif data.document_type == 'po' %}
+            <table class="grand-total-table">
+                <tfoot>
+                    <tr>
+                        <td class="total-label">Total PO Amount:</td>
+                        <td class="total-value">${{ data.po_amount }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% endif %}
+
+        <footer>
+            <p>{{ data.notes }}</p>
+        </footer>
+    </main>
+</body>
+</html>

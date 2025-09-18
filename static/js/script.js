@@ -1,0 +1,422 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // --- State Management ---
+    let currentQuoteId = null;
+    let currentView = 'form';
+
+    // --- Form and Control Initialization ---
+    const form = document.getElementById('quote-form') || document.getElementById('po-form');
+    const itemsContainer = document.getElementById('items-container');
+    const addSectionBtn = document.getElementById('add-section-btn');
+    const docTypeQuote = document.getElementById('doc_type_quote');
+    const docTypePo = document.getElementById('doc_type_po');
+    const quoteListContainer = document.getElementById('quote-list-container');
+    const generatePdfBtn = document.getElementById('generate-pdf-btn');
+    
+    // View management elements
+    const formView = document.getElementById('form-view');
+    const manageView = document.getElementById('manage-view');
+    const newQuoteBtn = document.getElementById('new-quote-btn');
+    const manageDocsBtn = document.getElementById('manage-docs-btn');
+
+    // --- Initial Load ---
+    loadQuotes();
+    updateViewButtons();
+
+    // --- Event Listeners ---
+
+    // Logic for Quote form (with line items)
+    if (form.id === 'quote-form') {
+        if (!itemsContainer || !addSectionBtn) {
+            console.error('Required quote form elements not found.');
+            return;
+        }
+        if (itemsContainer.children.length === 0) {
+            addSection();
+            ensureAllSectionsEditable();
+        }
+        addSectionBtn.addEventListener('click', () => {
+            addSection();
+            ensureAllSectionsEditable();
+        });
+
+        itemsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-item-btn')) {
+                if (confirm('Are you sure you want to delete this item?')) {
+                    e.target.closest('.line-item').remove();
+                }
+            } else if (e.target.classList.contains('remove-section-btn')) {
+                if (confirm('Are you sure you want to delete this entire section and all its items?')) {
+                    e.target.closest('.section-block').remove();
+                }
+            } else if (e.target.classList.contains('add-item-to-section-btn')) {
+                // Find the section-items container within this section
+                const sectionBlock = e.target.closest('.section-block');
+                const sectionItems = sectionBlock.querySelector('.section-items');
+                addItem({}, sectionItems);
+                ensureAllSectionsEditable();
+            }
+        });
+    }
+
+    // Document type switching
+    docTypeQuote.addEventListener('change', () => {
+        if (docTypeQuote.checked) window.location.href = '/quote';
+    });
+    docTypePo.addEventListener('change', () => {
+        if (docTypePo.checked) window.location.href = '/po';
+    });
+
+    // Form submission
+    form.addEventListener('submit', handleFormSubmit);
+
+    // Quote list actions
+    quoteListContainer.addEventListener('click', handleQuoteListActions);
+
+    // View switching
+    newQuoteBtn.addEventListener('click', () => switchView('form'));
+    manageDocsBtn.addEventListener('click', () => switchView('manage'));
+
+    // --- Core Functions ---
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        generatePdfBtn.textContent = 'Saving...';
+        generatePdfBtn.disabled = true;
+
+        const quoteData = await collectFormData();
+        const method = currentQuoteId ? 'PUT' : 'POST';
+        const url = currentQuoteId ? `/api/quote/${currentQuoteId}` : '/api/quotes';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(quoteData),
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            resetForm();
+            loadQuotes();
+            alert(`Quote ${currentQuoteId ? 'updated' : 'created'} successfully!`);
+            switchView('manage');
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to save quote. Check console for details.');
+        } finally {
+            generatePdfBtn.textContent = 'Save Document';
+            generatePdfBtn.disabled = false;
+        }
+    }
+
+    function handleQuoteListActions(e) {
+        const target = e.target;
+        const quoteItem = target.closest('.quote-list-item');
+        if (!quoteItem) return;
+
+        const quoteId = quoteItem.dataset.id;
+
+        if (target.classList.contains('edit-btn')) {
+            editQuote(quoteId);
+        } else if (target.classList.contains('delete-btn')) {
+            deleteQuote(quoteId);
+        } else if (target.classList.contains('pdf-btn')) {
+            window.open(`/quote/${quoteId}/pdf`, '_blank');
+        }
+    }
+
+    async function loadQuotes() {
+        try {
+            const response = await fetch('/api/quotes');
+            if (!response.ok) throw new Error('Failed to load quotes.');
+            const quotes = await response.json();
+            renderQuoteList(quotes);
+        } catch (error) {
+            console.error('Error loading quotes:', error);
+            quoteListContainer.innerHTML = '<p>Error loading documents.</p>';
+        }
+    }
+
+    function renderQuoteList(quotes) {
+        if (quotes.length === 0) {
+            quoteListContainer.innerHTML = '<p>No documents found.</p>';
+            return;
+        }
+        quoteListContainer.innerHTML = quotes.map(quote => `
+            <div class="quote-list-item" data-id="${quote.id}">
+                <div class="info">
+                    <strong>${quote.doc_number}</strong><br>
+                    <small>${quote.document_type === 'po' ? quote.po_name : quote.quote_name || 'Untitled'} - ${new Date(quote.created_at).toLocaleDateString()}</small>
+                </div>
+                <div class="actions">
+                    <button class="btn-sm pdf-btn">PDF</button>
+                    <button class="btn-sm edit-btn">Edit</button>
+                    <button class="btn-sm delete-btn">Del</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function editQuote(id) {
+        try {
+            const response = await fetch(`/api/quote/${id}`);
+            if (!response.ok) throw new Error('Failed to fetch quote data.');
+            const quote = await response.json();
+            populateForm(quote);
+            currentQuoteId = id;
+            generatePdfBtn.textContent = 'Update Document';
+            switchView('form');
+            window.scrollTo(0, 0);
+        } catch (error) {
+            console.error('Error fetching quote for edit:', error);
+            alert('Could not load quote for editing.');
+        }
+    }
+
+    async function deleteQuote(id) {
+        if (!confirm('Are you sure you want to delete this document?')) return;
+
+        try {
+            const response = await fetch(`/api/quote/${id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Failed to delete quote.');
+            loadQuotes();
+            if (currentQuoteId === id) resetForm();
+        } catch (error) {
+            console.error('Error deleting quote:', error);
+            alert('Could not delete quote.');
+        }
+    }
+
+    function populateForm(quote) {
+        // Reset form first
+        resetForm();
+
+        // Set document type and redirect if needed
+        if (quote.document_type === 'po') {
+            if (form.id === 'quote-form') {
+                // We're on the quote page but need PO form - redirect
+                window.location.href = '/po';
+                return;
+            }
+            docTypePo.checked = true;
+        } else {
+            if (form.id === 'po-form') {
+                // We're on the PO page but need quote form - redirect
+                window.location.href = '/quote';
+                return;
+            }
+            docTypeQuote.checked = true;
+        }
+
+        // Populate fields based on document type
+        if (quote.document_type === 'quote') {
+            document.getElementById('quote_name').value = quote.quote_name || '';
+            document.getElementById('quote_date').value = quote.quote_date || '';
+            
+            // Clear and populate line items for quotes
+            if (itemsContainer) {
+                itemsContainer.innerHTML = '';
+                quote.items.forEach(item => {
+                    if (item.type === 'section') {
+                        addSection(item.title);
+                    } else if (item.type === 'item') {
+                        addItem(item);
+                    }
+                });
+                // Ensure all sections remain editable after population
+                ensureAllSectionsEditable();
+            }
+        } else if (quote.document_type === 'po') {
+            // Populate PO-specific fields
+            const setValue = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value || '';
+            };
+            
+            setValue('po_name', quote.po_name);
+            setValue('po_date', quote.po_date);
+            setValue('payment_terms', quote.payment_terms);
+            setValue('shipping_name', quote.shipping_name);
+            setValue('shipping_address', quote.shipping_address);
+            setValue('shipping_city_state_zip', quote.shipping_city_state_zip);
+            setValue('billing_name', quote.billing_name);
+            setValue('billing_address', quote.billing_address);
+            setValue('billing_city_state_zip', quote.billing_city_state_zip);
+            setValue('supplier_name', quote.supplier_name);
+            setValue('supplier_quote', quote.supplier_quote);
+            setValue('supplier_contact', quote.supplier_contact);
+            setValue('end_user_name', quote.end_user_name);
+            setValue('end_user_po', quote.end_user_po);
+            setValue('end_user_contact', quote.end_user_contact);
+            setValue('po_amount', quote.po_amount);
+        }
+
+        // Common fields
+        document.getElementById('notes').value = quote.notes || '';
+    }
+
+    function resetForm() {
+        form.reset();
+        if (itemsContainer) {
+            itemsContainer.innerHTML = '';
+            addSection(); // Add one empty section for quotes only
+        }
+        currentQuoteId = null;
+        generatePdfBtn.textContent = 'Save Document';
+    }
+
+    function addSection(title = '') {
+        const sectionId = `section-${Date.now()}`;
+        const sectionWrapper = document.createElement('div');
+        sectionWrapper.className = 'section-block';
+        sectionWrapper.id = sectionId;
+        sectionWrapper.innerHTML = `
+            <div class="section-header">
+                <input type="text" placeholder="Section Header" class="section-title" data-type="section" value="${title}">
+                <button type="button" class="remove-btn remove-section-btn">Remove</button>
+            </div>
+            <div class="section-items">
+                <div class="item-row item-header">
+                    <span>Part #</span>
+                    <span>Description</span>
+                    <span>Type</span>
+                    <span>Unit Price</span>
+                    <span>Qty</span>
+                    <span>Discounted Unit</span>
+                    <span></span>
+                </div>
+            </div>
+            <div class="section-controls">
+                <button type="button" class="add-item-to-section-btn">Add Item to This Section</button>
+            </div>
+        `;
+        itemsContainer.appendChild(sectionWrapper);
+        
+        // Ensure the section input is editable
+        const sectionInput = sectionWrapper.querySelector('.section-title');
+        if (sectionInput) {
+            sectionInput.removeAttribute('readonly');
+            sectionInput.removeAttribute('disabled');
+            sectionInput.style.pointerEvents = 'auto';
+            sectionInput.tabIndex = 0;
+        }
+    }
+
+    // Function to ensure all section inputs remain editable
+    function ensureAllSectionsEditable() {
+        document.querySelectorAll('.section-title').forEach(input => {
+            input.removeAttribute('readonly');
+            input.removeAttribute('disabled');
+            input.style.pointerEvents = 'auto';
+            input.tabIndex = 0;
+        });
+    }
+
+    function addItem(item = {}, targetSectionElement = null) {
+        // If no specific section provided, use the last section (for backward compatibility)
+        const targetSection = targetSectionElement || itemsContainer.querySelector('.section-block:last-child .section-items');
+        if (!targetSection) {
+            alert('Please add a section first.');
+            return;
+        }
+        const itemId = `item-${Date.now()}`;
+        targetSection.insertAdjacentHTML('beforeend', `
+            <div class="item-row line-item" id="${itemId}" data-type="item">
+                <input type="text" name="part_number[]" placeholder="Part #" value="${item.part_number || ''}">
+                <input type="text" name="description[]" placeholder="Description" value="${item.description || ''}">
+                <input type="text" name="item_type[]" placeholder="Type" value="${item.item_type || ''}">
+                <input type="number" class="unit-price" placeholder="Unit Price" step="0.01" value="${item.unit_price || ''}">
+                <input type="number" class="quantity" placeholder="Qty" value="${item.quantity || ''}">
+                <input type="number" class="discounted-price" placeholder="Discounted" step="0.01" value="${item.discounted_price || ''}">
+                <button type="button" class="remove-btn remove-item-btn">Remove</button>
+            </div>
+        `);
+    }
+
+    async function collectFormData() {
+        const data = {};
+        const docTypeInput = document.querySelector('input[name="document_type"]:checked');
+        data.document_type = docTypeInput ? docTypeInput.value : 'quote';
+
+        const getValue = id => document.getElementById(id)?.value || null;
+
+        if (data.document_type === 'quote') {
+            data.quote_name = getValue('quote_name');
+            data.quote_date = getValue('quote_date');
+        } else { // PO
+            data.po_name = getValue('po_name');
+            data.po_date = getValue('po_date');
+            data.payment_terms = getValue('payment_terms');
+            data.shipping_name = getValue('shipping_name');
+            data.shipping_address = getValue('shipping_address');
+            data.shipping_city_state_zip = getValue('shipping_city_state_zip');
+            data.billing_name = getValue('billing_name');
+            data.billing_address = getValue('billing_address');
+            data.billing_city_state_zip = getValue('billing_city_state_zip');
+            data.supplier_name = getValue('supplier_name');
+            data.supplier_quote = getValue('supplier_quote');
+            data.supplier_contact = getValue('supplier_contact');
+            data.end_user_name = getValue('end_user_name');
+            data.end_user_po = getValue('end_user_po');
+            data.end_user_contact = getValue('end_user_contact');
+            data.po_amount = getValue('po_amount');
+        }
+        data.notes = getValue('notes');
+
+        // Handle logo
+        const logoInput = document.getElementById('company_logo');
+        if (logoInput && logoInput.files[0]) {
+            data.company_logo_data = await toBase64(logoInput.files[0]);
+        }
+
+        // Collect line items
+        data.items = [];
+        document.querySelectorAll('.section-block').forEach(sectionBlock => {
+            const sectionTitleInput = sectionBlock.querySelector('.section-title');
+            if (sectionTitleInput && sectionTitleInput.value) {
+                data.items.push({ type: 'section', title: sectionTitleInput.value });
+            }
+
+            sectionBlock.querySelectorAll('.line-item').forEach(itemRow => {
+                data.items.push({
+                    type: 'item',
+                    part_number: itemRow.querySelector('[name="part_number[]"]').value,
+                    description: itemRow.querySelector('[name="description[]"]').value,
+                    item_type: itemRow.querySelector('[name="item_type[]"]').value,
+                    unit_price: itemRow.querySelector('.unit-price').value,
+                    quantity: itemRow.querySelector('.quantity').value,
+                    discounted_price: itemRow.querySelector('.discounted-price').value,
+                });
+            });
+        });
+
+        return data;
+    }
+
+    // --- View Management Functions ---
+    
+    function switchView(view) {
+        currentView = view;
+        if (view === 'form') {
+            formView.style.display = 'block';
+            manageView.style.display = 'none';
+        } else if (view === 'manage') {
+            formView.style.display = 'none';
+            manageView.style.display = 'block';
+        }
+        updateViewButtons();
+    }
+    
+    function updateViewButtons() {
+        newQuoteBtn.classList.toggle('active', currentView === 'form');
+        manageDocsBtn.classList.toggle('active', currentView === 'manage');
+    }
+
+    const toBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+});
