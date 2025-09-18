@@ -54,6 +54,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const sectionItems = sectionBlock.querySelector('.section-items');
                 addItem({}, sectionItems);
                 ensureAllSectionsEditable();
+            } else if (e.target.classList.contains('subcomponent-toggle-btn')) {
+                // Toggle subcomponents visibility
+                const itemRow = e.target.closest('.line-item');
+                const itemId = itemRow.id;
+                toggleSubcomponents(itemId);
+            } else if (e.target.classList.contains('add-subcomponent-btn')) {
+                // Add subcomponent to specific item
+                const itemId = e.target.getAttribute('data-item-id');
+                addSubcomponent(itemId);
+            } else if (e.target.classList.contains('remove-subcomponent-btn')) {
+                // Remove subcomponent
+                if (confirm('Are you sure you want to delete this subcomponent?')) {
+                    const subcomponentId = e.target.getAttribute('data-subcomponent-id');
+                    const subcomponentRow = document.getElementById(subcomponentId);
+                    if (subcomponentRow) {
+                        subcomponentRow.remove();
+                    }
+                }
             }
         });
     }
@@ -329,9 +347,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="number" class="unit-price" placeholder="Unit Price" step="0.01" value="${item.unit_price || ''}">
                 <input type="number" class="quantity" placeholder="Qty" value="${item.quantity || ''}">
                 <input type="number" class="discounted-price" placeholder="Discounted" step="0.01" value="${item.discounted_price || ''}">
-                <button type="button" class="remove-btn remove-item-btn">Remove</button>
+                <div class="item-actions">
+                    <button type="button" class="subcomponent-toggle-btn" title="Manage Subcomponents">📋</button>
+                    <button type="button" class="remove-btn remove-item-btn">Remove</button>
+                </div>
+            </div>
+            <div class="subcomponents-container" id="subcomponents-${itemId}" style="display: none;">
+                <div class="subcomponents-header">
+                    <h4>Subcomponents</h4>
+                    <button type="button" class="add-subcomponent-btn" data-item-id="${itemId}">Add Subcomponent</button>
+                </div>
+                <div class="subcomponents-list" id="subcomponents-list-${itemId}">
+                    <!-- Subcomponents will be added here -->
+                </div>
             </div>
         `);
+    }
+
+    function addSubcomponent(itemId, subcomponent = {}) {
+        const subcomponentsList = document.getElementById(`subcomponents-list-${itemId}`);
+        if (!subcomponentsList) return;
+
+        const subcomponentId = `subcomponent-${Date.now()}`;
+        const subcomponentHTML = `
+            <div class="subcomponent-row" id="${subcomponentId}">
+                <input type="text" class="subcomponent-description" placeholder="Subcomponent description" value="${subcomponent.description || ''}" data-item-id="${itemId}">
+                <input type="number" class="subcomponent-quantity" placeholder="Qty" min="1" value="${subcomponent.quantity || 1}" data-item-id="${itemId}">
+                <button type="button" class="remove-subcomponent-btn" data-subcomponent-id="${subcomponentId}">Remove</button>
+            </div>
+        `;
+        subcomponentsList.insertAdjacentHTML('beforeend', subcomponentHTML);
+    }
+
+    function toggleSubcomponents(itemId) {
+        const container = document.getElementById(`subcomponents-${itemId}`);
+        if (container) {
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
+        }
     }
 
     async function collectFormData() {

@@ -232,6 +232,100 @@ textarea {
     background-color: #218838;
 }
 
+/* Subcomponent Styles */
+.item-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.subcomponent-toggle-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.2s;
+}
+
+.subcomponent-toggle-btn:hover {
+    background: #5a6268;
+}
+
+.subcomponents-container {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    margin: 5px 0 15px 20px;
+    padding: 10px;
+}
+
+.subcomponents-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.subcomponents-header h4 {
+    margin: 0;
+    font-size: 0.9em;
+    color: #495057;
+}
+
+.add-subcomponent-btn {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.2s;
+}
+
+.add-subcomponent-btn:hover {
+    background: #138496;
+}
+
+.subcomponent-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+}
+
+.subcomponent-description {
+    flex: 1;
+}
+
+.subcomponent-quantity {
+    width: 60px;
+    text-align: center;
+}
+
+.remove-subcomponent-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.2s;
+}
+
+.remove-subcomponent-btn:hover {
+    background: #c82333;
+}
+
 .action-bar {
     display: flex;
     gap: 1rem;

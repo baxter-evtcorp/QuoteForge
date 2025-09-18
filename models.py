@@ -43,3 +43,11 @@ class LineItem(db.Model):
     quantity = db.Column(db.Integer, nullable=True)
     discounted_price = db.Column(db.Float, nullable=True)
     extended_price = db.Column(db.Float, nullable=True)
+
+    subcomponents = db.relationship('Subcomponent', backref='line_item', lazy=True, cascade="all, delete-orphan")
+
+class Subcomponent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    line_item_id = db.Column(db.Integer, db.ForeignKey('line_item.id'), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
