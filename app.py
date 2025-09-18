@@ -173,7 +173,11 @@ def generate_pdf(quote_id):
             'unit_price': item.unit_price or 0,
             'quantity': item.quantity or 0,
             'discounted_price': item.discounted_price or 0,
-            'extended_price': item.extended_price or 0
+            'extended_price': item.extended_price or 0,
+            'subcomponents': [{
+                'description': sub.description,
+                'quantity': sub.quantity
+            } for sub in item.subcomponents]
         }
         items_for_template.append(item_dict)
     data['items'] = items_for_template

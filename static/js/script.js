@@ -58,12 +58,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Toggle subcomponents visibility
                 const itemRow = e.target.closest('.line-item');
                 const itemId = itemRow.id;
-                console.log('Toggle subcomponents for item:', itemId);
                 toggleSubcomponents(itemId);
             } else if (e.target.classList.contains('add-subcomponent-btn')) {
                 // Add subcomponent to specific item
                 const itemId = e.target.getAttribute('data-item-id');
-                console.log('Add subcomponent to item:', itemId);
                 addSubcomponent(itemId);
             } else if (e.target.classList.contains('remove-subcomponent-btn')) {
                 // Remove subcomponent
@@ -379,9 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addSubcomponent(itemId, subcomponent = {}) {
-        console.log('Looking for subcomponents-list-' + itemId);
         const subcomponentsList = document.getElementById(`subcomponents-list-${itemId}`);
-        console.log('Found subcomponents list:', subcomponentsList);
         if (!subcomponentsList) {
             console.error('Could not find subcomponents list for item:', itemId);
             return;
