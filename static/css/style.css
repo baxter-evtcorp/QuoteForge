@@ -15,7 +15,7 @@ body {
     background-color: var(--background-color);
     color: var(--text-color);
     margin: 0;
-    padding: 2rem;
+    padding: 3rem;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -24,11 +24,11 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1400px;
     background-color: var(--container-bg);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    padding: 2rem 3rem;
+    padding: 2.5rem 4rem;
 }
 
 header {
@@ -120,6 +120,61 @@ textarea {
 #items-container .section-header input:focus {
     border-bottom: 2px solid #007bff;
     outline: none;
+}
+
+/* Section drag handle and actions */
+.section-drag-handle {
+    cursor: grab;
+    color: #6c757d;
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 5px;
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.section-drag-handle:hover {
+    color: #495057;
+}
+
+.section-drag-handle:active {
+    cursor: grabbing;
+}
+
+.section-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.copy-btn {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+
+.copy-btn:hover {
+    background: #138496;
+}
+
+/* Drag states */
+.section-block.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.section-block[draggable="true"]:hover {
+    cursor: grab;
+}
+
+.section-block[draggable="true"]:active {
+    cursor: grabbing;
 }
 
 .section-block {

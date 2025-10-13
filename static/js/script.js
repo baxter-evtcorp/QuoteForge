@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (confirm('Are you sure you want to delete this entire section and all its items?')) {
                     e.target.closest('.section-block').remove();
                 }
+            } else if (e.target.classList.contains('copy-section-btn')) {
+                const sectionBlock = e.target.closest('.section-block');
+                copySection(sectionBlock);
             } else if (e.target.classList.contains('add-item-to-section-btn')) {
                 // Find the section-items container within this section
                 const sectionBlock = e.target.closest('.section-block');
@@ -254,6 +257,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 // Ensure all sections remain editable after population
                 ensureAllSectionsEditable();
+                
+                // Add drag and drop listeners to all loaded sections
+                document.querySelectorAll('.section-block').forEach(section => {
+                    addDragAndDropListeners(section);
+                });
             }
         } else if (quote.document_type === 'po') {
             // Populate PO-specific fields
@@ -299,10 +307,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const sectionWrapper = document.createElement('div');
         sectionWrapper.className = 'section-block';
         sectionWrapper.id = sectionId;
+        sectionWrapper.draggable = true;
         sectionWrapper.innerHTML = `
             <div class="section-header">
+                <div class="section-drag-handle" title="Drag to reorder">⋮⋮</div>
                 <input type="text" placeholder="Section Header" class="section-title" data-type="section" value="${title}">
-                <button type="button" class="remove-btn remove-section-btn">Remove</button>
+                <div class="section-actions">
+                    <button type="button" class="copy-btn copy-section-btn" title="Copy Section">📋</button>
+                    <button type="button" class="remove-btn remove-section-btn">Remove</button>
+                </div>
             </div>
             <div class="section-items">
                 <div class="item-row item-header">
@@ -320,6 +333,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         itemsContainer.appendChild(sectionWrapper);
+        
+        // Add drag and drop event listeners
+        addDragAndDropListeners(sectionWrapper);
         
         // Ensure the section input is editable
         const sectionInput = sectionWrapper.querySelector('.section-title');
@@ -497,6 +513,119 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateViewButtons() {
         newQuoteBtn.classList.toggle('active', currentView === 'form');
         manageDocsBtn.classList.toggle('active', currentView === 'manage');
+    }
+
+    // --- Copy and Reorder Functions ---
+    
+    function copySection(sectionBlock) {
+        const sectionTitle = sectionBlock.querySelector('.section-title').value;
+        const sectionItems = sectionBlock.querySelectorAll('.line-item');
+        
+        // Create new section with copied title
+        const copiedTitle = sectionTitle ? `${sectionTitle} (Copy)` : '';
+        addSection(copiedTitle);
+        
+        // Get the newly created section
+        const newSection = itemsContainer.querySelector('.section-block:last-child');
+        const newSectionItems = newSection.querySelector('.section-items');
+        
+        // Copy all items from the original section
+        sectionItems.forEach(itemRow => {
+            const itemData = {
+                part_number: itemRow.querySelector('[name="part_number[]"]').value,
+                description: itemRow.querySelector('[name="description[]"]').value,
+                item_type: itemRow.querySelector('[name="item_type[]"]').value,
+                unit_price: itemRow.querySelector('.unit-price').value,
+                quantity: itemRow.querySelector('.quantity').value,
+                discounted_price: itemRow.querySelector('.discounted-price').value
+            };
+            
+            addItem(itemData, newSectionItems);
+            
+            // Copy subcomponents if they exist
+            const itemId = itemRow.id;
+            const subcomponentsList = document.getElementById(`subcomponents-list-${itemId}`);
+            if (subcomponentsList) {
+                const subcomponents = subcomponentsList.querySelectorAll('.subcomponent-row');
+                if (subcomponents.length > 0) {
+                    const newItemElements = newSectionItems.querySelectorAll('.line-item');
+                    const newItemElement = newItemElements[newItemElements.length - 1];
+                    const newItemId = newItemElement.id;
+                    
+                    subcomponents.forEach(subRow => {
+                        const subcomponentData = {
+                            description: subRow.querySelector('.subcomponent-description').value,
+                            quantity: subRow.querySelector('.subcomponent-quantity').value
+                        };
+                        addSubcomponent(newItemId, subcomponentData);
+                    });
+                }
+            }
+        });
+        
+        ensureAllSectionsEditable();
+    }
+    
+    function addDragAndDropListeners(sectionElement) {
+        sectionElement.addEventListener('dragstart', handleDragStart);
+        sectionElement.addEventListener('dragover', handleDragOver);
+        sectionElement.addEventListener('drop', handleDrop);
+        sectionElement.addEventListener('dragend', handleDragEnd);
+    }
+    
+    let draggedElement = null;
+    
+    function handleDragStart(e) {
+        draggedElement = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+    }
+    
+    function handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+    
+    function handleDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+        
+        if (draggedElement !== this) {
+            const rect = this.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            if (e.clientY < midpoint) {
+                // Insert before this element
+                this.parentNode.insertBefore(draggedElement, this);
+            } else {
+                // Insert after this element
+                this.parentNode.insertBefore(draggedElement, this.nextSibling);
+            }
+        }
+        
+        return false;
+    }
+    
+    function handleDragEnd(e) {
+        this.classList.remove('dragging');
+        draggedElement = null;
+        
+        // Re-add event listeners to all sections after reordering
+        document.querySelectorAll('.section-block').forEach(section => {
+            // Remove existing listeners to avoid duplicates
+            section.removeEventListener('dragstart', handleDragStart);
+            section.removeEventListener('dragover', handleDragOver);
+            section.removeEventListener('drop', handleDrop);
+            section.removeEventListener('dragend', handleDragEnd);
+            
+            // Re-add listeners
+            addDragAndDropListeners(section);
+        });
     }
 
     const toBase64 = file => new Promise((resolve, reject) => {
