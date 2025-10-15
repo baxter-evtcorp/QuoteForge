@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else if (e.target.classList.contains('copy-section-btn')) {
                 const sectionBlock = e.target.closest('.section-block');
-                copySection(sectionBlock);
+                showCopySectionModal(sectionBlock);
             } else if (e.target.classList.contains('add-item-to-section-btn')) {
                 // Find the section-items container within this section
                 const sectionBlock = e.target.closest('.section-block');
@@ -144,6 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteQuote(quoteId);
         } else if (target.classList.contains('pdf-btn')) {
             window.open(`/quote/${quoteId}/pdf`, '_blank');
+        } else if (target.classList.contains('copy-btn')) {
+            copyQuote(quoteId);
         }
     }
 
@@ -173,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="actions">
                     <button class="btn-sm pdf-btn">PDF</button>
                     <button class="btn-sm edit-btn">Edit</button>
+                    <button class="btn-sm copy-btn">Copy</button>
                     <button class="btn-sm delete-btn">Del</button>
                 </div>
             </div>
@@ -206,6 +209,20 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error deleting quote:', error);
             alert('Could not delete quote.');
+        }
+    }
+
+    async function copyQuote(id) {
+        try {
+            const response = await fetch(`/api/quote/${id}/copy`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to copy quote.');
+            
+            const result = await response.json();
+            alert(`Quote copied successfully! New document number: ${result.doc_number}`);
+            loadQuotes(); // Refresh the quote list
+        } catch (error) {
+            console.error('Error copying quote:', error);
+            alert('Could not copy quote. Please try again.');
         }
     }
 
@@ -261,6 +278,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add drag and drop listeners to all loaded sections
                 document.querySelectorAll('.section-block').forEach(section => {
                     addDragAndDropListeners(section);
+                });
+                
+                // Add drag and drop listeners to all loaded items
+                document.querySelectorAll('.item-wrapper').forEach(item => {
+                    addItemDragAndDropListeners(item);
                 });
             }
         } else if (quote.document_type === 'po') {
@@ -366,8 +388,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const itemId = `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         targetSection.insertAdjacentHTML('beforeend', `
-            <div class="item-wrapper" id="wrapper-${itemId}">
+            <div class="item-wrapper" id="wrapper-${itemId}" draggable="true">
                 <div class="item-row line-item" id="${itemId}" data-type="item">
+                    <div class="item-drag-handle" title="Drag to move item">⋮⋮</div>
                     <input type="text" name="part_number[]" placeholder="Part #" value="${item.part_number || ''}">
                     <input type="text" name="description[]" placeholder="Description" value="${item.description || ''}">
                     <input type="text" name="item_type[]" placeholder="Type" value="${item.item_type || ''}">
@@ -390,6 +413,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `);
+        
+        // Add drag and drop event listeners to the new item
+        const newItemWrapper = document.getElementById(`wrapper-${itemId}`);
+        addItemDragAndDropListeners(newItemWrapper);
     }
 
     function addSubcomponent(itemId, subcomponent = {}) {
@@ -565,7 +592,163 @@ document.addEventListener('DOMContentLoaded', function() {
         
         ensureAllSectionsEditable();
     }
-    
+
+    // Section copying to other quotes functionality
+    let currentSectionToCopy = null;
+    let selectedTargetQuoteId = null;
+
+    function showCopySectionModal(sectionBlock) {
+        currentSectionToCopy = sectionBlock;
+        const modal = document.getElementById('copy-section-modal');
+        
+        // Load available quotes
+        loadTargetQuotes();
+        
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    async function loadTargetQuotes() {
+        try {
+            const response = await fetch('/api/quotes');
+            const quotes = await response.json();
+            
+            const targetQuotesList = document.getElementById('target-quotes-list');
+            targetQuotesList.innerHTML = '';
+            
+            // Filter out current quote if we're editing one
+            const availableQuotes = quotes.filter(quote => quote.id !== currentQuoteId);
+            
+            if (availableQuotes.length === 0) {
+                targetQuotesList.innerHTML = '<p>No other quotes available. Create another quote first.</p>';
+                return;
+            }
+            
+            availableQuotes.forEach(quote => {
+                const quoteOption = document.createElement('div');
+                quoteOption.className = 'quote-option';
+                quoteOption.innerHTML = `
+                    <input type="radio" name="target-quote" value="${quote.id}" id="quote-${quote.id}">
+                    <div class="quote-info">
+                        <div class="quote-name">${quote.quote_name || quote.po_name || quote.doc_number}</div>
+                        <div class="quote-details">${quote.doc_number} • ${quote.quote_date || quote.po_date || 'No date'}</div>
+                    </div>
+                `;
+                
+                quoteOption.addEventListener('click', () => {
+                    const radio = quoteOption.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    selectedTargetQuoteId = quote.id;
+                    
+                    // Update visual selection
+                    document.querySelectorAll('.quote-option').forEach(opt => opt.classList.remove('selected'));
+                    quoteOption.classList.add('selected');
+                    
+                    // Enable copy button
+                    document.getElementById('confirm-copy-btn').disabled = false;
+                });
+                
+                targetQuotesList.appendChild(quoteOption);
+            });
+        } catch (error) {
+            console.error('Error loading quotes:', error);
+            document.getElementById('target-quotes-list').innerHTML = '<p>Error loading quotes. Please try again.</p>';
+        }
+    }
+
+    async function copySectionToQuote() {
+        if (!currentSectionToCopy || !selectedTargetQuoteId) {
+            alert('Please select a target quote.');
+            return;
+        }
+
+        const sectionTitle = currentSectionToCopy.querySelector('.section-title').value;
+        const sectionItems = currentSectionToCopy.querySelectorAll('.line-item');
+        
+        // Collect section data
+        const sectionData = {
+            section_title: sectionTitle,
+            section_items: []
+        };
+
+        sectionItems.forEach(itemRow => {
+            const itemData = {
+                part_number: itemRow.querySelector('[name="part_number[]"]').value,
+                description: itemRow.querySelector('[name="description[]"]').value,
+                item_type: itemRow.querySelector('[name="item_type[]"]').value,
+                unit_price: itemRow.querySelector('.unit-price').value,
+                quantity: itemRow.querySelector('.quantity').value,
+                discounted_price: itemRow.querySelector('.discounted-price').value,
+                subcomponents: []
+            };
+            
+            // Collect subcomponents
+            const itemId = itemRow.id;
+            const subcomponentsList = document.getElementById(`subcomponents-list-${itemId}`);
+            if (subcomponentsList) {
+                const subcomponents = subcomponentsList.querySelectorAll('.subcomponent-row');
+                subcomponents.forEach(subRow => {
+                    itemData.subcomponents.push({
+                        description: subRow.querySelector('.subcomponent-description').value,
+                        quantity: subRow.querySelector('.subcomponent-quantity').value
+                    });
+                });
+            }
+            
+            sectionData.section_items.push(itemData);
+        });
+
+        try {
+            const response = await fetch(`/api/quote/${currentQuoteId}/copy-section/${selectedTargetQuoteId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(sectionData)
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert(result.message);
+                closeCopySectionModal();
+            } else {
+                alert('Error copying section: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error copying section:', error);
+            alert('Error copying section. Please try again.');
+        }
+    }
+
+    function closeCopySectionModal() {
+        const modal = document.getElementById('copy-section-modal');
+        modal.style.display = 'none';
+        currentSectionToCopy = null;
+        selectedTargetQuoteId = null;
+        document.getElementById('confirm-copy-btn').disabled = true;
+    }
+
+    // Modal event listeners - initialize immediately since we're already in DOMContentLoaded
+    const modal = document.getElementById('copy-section-modal');
+    if (modal) {
+        const closeBtn = modal.querySelector('.close-modal');
+        const cancelBtn = document.getElementById('cancel-copy-btn');
+        const confirmBtn = document.getElementById('confirm-copy-btn');
+
+        if (closeBtn) closeBtn.addEventListener('click', closeCopySectionModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeCopySectionModal);
+        if (confirmBtn) confirmBtn.addEventListener('click', copySectionToQuote);
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeCopySectionModal();
+            }
+        });
+    }
+
     function addDragAndDropListeners(sectionElement) {
         sectionElement.addEventListener('dragstart', handleDragStart);
         sectionElement.addEventListener('dragover', handleDragOver);
@@ -625,6 +808,118 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Re-add listeners
             addDragAndDropListeners(section);
+        });
+    }
+
+    // Item drag and drop functionality
+    function addItemDragAndDropListeners(itemElement) {
+        itemElement.addEventListener('dragstart', handleItemDragStart);
+        itemElement.addEventListener('dragover', handleItemDragOver);
+        itemElement.addEventListener('drop', handleItemDrop);
+        itemElement.addEventListener('dragend', handleItemDragEnd);
+        
+        // Also add drop listeners to section containers to allow dropping between sections
+        document.querySelectorAll('.section-items').forEach(sectionItems => {
+            sectionItems.addEventListener('dragover', handleSectionDragOver);
+            sectionItems.addEventListener('drop', handleSectionDrop);
+        });
+    }
+    
+    let draggedItem = null;
+    
+    function handleItemDragStart(e) {
+        draggedItem = this;
+        this.classList.add('dragging-item');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+        e.stopPropagation(); // Prevent section drag from triggering
+    }
+    
+    function handleItemDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        e.stopPropagation(); // Prevent section drag over from triggering
+        return false;
+    }
+    
+    function handleItemDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+        
+        if (draggedItem && draggedItem !== this) {
+            const rect = this.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            if (e.clientY < midpoint) {
+                // Insert before this element
+                this.parentNode.insertBefore(draggedItem, this);
+            } else {
+                // Insert after this element
+                this.parentNode.insertBefore(draggedItem, this.nextSibling);
+            }
+        }
+        
+        return false;
+    }
+    
+    function handleSectionDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        if (draggedItem) { // Only handle if we're dragging an item
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        }
+        return false;
+    }
+    
+    function handleSectionDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+        
+        this.classList.remove('drag-over');
+        
+        if (draggedItem) {
+            // Find the last item in this section (excluding the header)
+            const items = this.querySelectorAll('.item-wrapper');
+            if (items.length > 0) {
+                // Insert after the last item
+                this.appendChild(draggedItem);
+            } else {
+                // If no items, insert after the header
+                const header = this.querySelector('.item-header');
+                if (header) {
+                    this.insertBefore(draggedItem, header.nextSibling);
+                } else {
+                    this.appendChild(draggedItem);
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    function handleItemDragEnd(e) {
+        this.classList.remove('dragging-item');
+        document.querySelectorAll('.section-items').forEach(section => {
+            section.classList.remove('drag-over');
+        });
+        draggedItem = null;
+        
+        // Re-add event listeners to all items after reordering
+        document.querySelectorAll('.item-wrapper').forEach(item => {
+            // Remove existing listeners to avoid duplicates
+            item.removeEventListener('dragstart', handleItemDragStart);
+            item.removeEventListener('dragover', handleItemDragOver);
+            item.removeEventListener('drop', handleItemDrop);
+            item.removeEventListener('dragend', handleItemDragEnd);
+            
+            // Re-add listeners
+            addItemDragAndDropListeners(item);
         });
     }
 

@@ -65,6 +65,26 @@
                 <h2>Manage Documents</h2>
                 <div id="quote-list-container"></div>
             </div>
+            
+            <!-- Copy Section Modal -->
+            <div id="copy-section-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Copy Section to Another Quote</h3>
+                        <span class="close-modal">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <p>Select the target quote to copy this section to:</p>
+                        <div id="target-quotes-list">
+                            <!-- Target quotes will be populated here -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="cancel-copy-btn" class="secondary-btn">Cancel</button>
+                        <button type="button" id="confirm-copy-btn" class="primary-btn" disabled>Copy Section</button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

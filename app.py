@@ -7,7 +7,7 @@ import csv
 from werkzeug.utils import secure_filename
 import base64
 from database import db
-from models import Quote, LineItem
+from models import Quote, LineItem, Subcomponent
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///quotes.db'
@@ -301,6 +301,140 @@ def delete_quote(quote_id):
     db.session.delete(quote)
     db.session.commit()
     return jsonify({'message': 'Quote deleted successfully'})
+
+@app.route('/api/quote/<int:quote_id>/copy', methods=['POST'])
+def copy_quote(quote_id):
+    original_quote = Quote.query.get_or_404(quote_id)
+    
+    # Generate new document number
+    doc_type = original_quote.document_type
+    prefix = 'EVTPO' if doc_type == 'po' else 'EVTQ'
+    
+    # Find the highest existing number for this type
+    existing_quotes = Quote.query.filter(Quote.doc_number.like(f'{prefix}%')).all()
+    if existing_quotes:
+        numbers = []
+        for q in existing_quotes:
+            try:
+                num = int(q.doc_number.replace(prefix, ''))
+                numbers.append(num)
+            except ValueError:
+                continue
+        next_number = max(numbers) + 1 if numbers else 1
+    else:
+        next_number = 1
+    
+    new_doc_number = f'{prefix}{next_number:04d}'
+    
+    # Create new quote with copied data
+    new_quote = Quote(
+        document_type=original_quote.document_type,
+        quote_name=f"Copy of {original_quote.quote_name}" if original_quote.quote_name else None,
+        quote_date=original_quote.quote_date,
+        company_logo=original_quote.company_logo,
+        notes=original_quote.notes,
+        doc_number=new_doc_number,
+        # PO fields
+        po_name=f"Copy of {original_quote.po_name}" if original_quote.po_name else None,
+        po_date=original_quote.po_date,
+        payment_terms=original_quote.payment_terms,
+        shipping_name=original_quote.shipping_name,
+        shipping_address=original_quote.shipping_address,
+        shipping_city_state_zip=original_quote.shipping_city_state_zip,
+        billing_name=original_quote.billing_name,
+        billing_address=original_quote.billing_address,
+        billing_city_state_zip=original_quote.billing_city_state_zip,
+        supplier_name=original_quote.supplier_name,
+        supplier_quote=original_quote.supplier_quote,
+        supplier_contact=original_quote.supplier_contact,
+        end_user_name=original_quote.end_user_name,
+        end_user_po=original_quote.end_user_po,
+        end_user_contact=original_quote.end_user_contact,
+        po_amount=original_quote.po_amount
+    )
+    
+    db.session.add(new_quote)
+    db.session.flush()  # Get the new quote ID
+    
+    # Copy all line items
+    for original_item in original_quote.items:
+        new_item = LineItem(
+            quote_id=new_quote.id,
+            item_type=original_item.item_type,
+            title=original_item.title,
+            part_number=original_item.part_number,
+            description=original_item.description,
+            item_category=original_item.item_category,
+            unit_price=original_item.unit_price,
+            quantity=original_item.quantity,
+            discounted_price=original_item.discounted_price,
+            extended_price=original_item.extended_price
+        )
+        db.session.add(new_item)
+        db.session.flush()  # Get the new item ID
+        
+        # Copy all subcomponents
+        for original_sub in original_item.subcomponents:
+            new_sub = Subcomponent(
+                line_item_id=new_item.id,
+                description=original_sub.description,
+                quantity=original_sub.quantity
+            )
+            db.session.add(new_sub)
+    
+    db.session.commit()
+    
+    return jsonify({
+        'id': new_quote.id, 
+        'doc_number': new_quote.doc_number,
+        'message': 'Quote copied successfully'
+    })
+
+@app.route('/api/quote/<int:source_quote_id>/copy-section/<int:target_quote_id>', methods=['POST'])
+def copy_section_to_quote(source_quote_id, target_quote_id):
+    data = request.get_json()
+    section_title = data.get('section_title')
+    section_items = data.get('section_items', [])
+    
+    # Verify both quotes exist
+    source_quote = Quote.query.get_or_404(source_quote_id)
+    target_quote = Quote.query.get_or_404(target_quote_id)
+    
+    # Add section header to target quote
+    section_line_item = LineItem(
+        item_type='section',
+        title=f"{section_title} (Copied from {source_quote.doc_number})"
+    )
+    target_quote.items.append(section_line_item)
+    
+    # Add all items from the section
+    for item_data in section_items:
+        line_item = LineItem(
+            item_type='item',
+            part_number=item_data.get('part_number'),
+            description=item_data.get('description'),
+            item_category=item_data.get('item_type'),
+            unit_price=float(item_data.get('unit_price', 0) or 0),
+            quantity=int(item_data.get('quantity', 0) or 0),
+            discounted_price=float(item_data.get('discounted_price', 0) or 0)
+        )
+        line_item.extended_price = line_item.quantity * line_item.discounted_price
+        target_quote.items.append(line_item)
+        
+        # Add subcomponents if they exist
+        for subcomponent_data in item_data.get('subcomponents', []):
+            from models import Subcomponent
+            subcomponent = Subcomponent(
+                description=subcomponent_data['description'],
+                quantity=int(subcomponent_data.get('quantity', 1))
+            )
+            line_item.subcomponents.append(subcomponent)
+    
+    db.session.commit()
+    
+    return jsonify({
+        'message': f'Section copied successfully to {target_quote.doc_number}'
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
