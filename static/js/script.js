@@ -474,12 +474,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         data.notes = getValue('notes');
 
-        // Handle logo
-        const logoInput = document.getElementById('company_logo');
-        if (logoInput && logoInput.files[0]) {
-            data.company_logo_data = await toBase64(logoInput.files[0]);
-        }
-
         // Collect line items
         data.items = [];
         document.querySelectorAll('.section-block').forEach(sectionBlock => {
@@ -923,10 +917,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const toBase64 = file => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
 });
