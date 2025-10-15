@@ -169,8 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
         quoteListContainer.innerHTML = quotes.map(quote => `
             <div class="quote-list-item" data-id="${quote.id}">
                 <div class="info">
-                    <strong>${quote.doc_number}</strong><br>
-                    <small>${quote.document_type === 'po' ? quote.po_name : quote.quote_name || 'Untitled'} - ${new Date(quote.created_at).toLocaleDateString()}</small>
+                    <strong>${quote.document_type === 'po' ? quote.po_name : quote.quote_name || 'Untitled'}</strong><br>
+                    <small>${quote.doc_number} - ${new Date(quote.created_at).toLocaleDateString()}</small>
                 </div>
                 <div class="actions">
                     <button class="btn-sm pdf-btn">PDF</button>
