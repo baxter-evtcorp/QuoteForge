@@ -6,3 +6,7 @@ services:
       - "5000:5000"
     volumes:
       - .:/app
+      - ./instance:/app/instance  # Persist database
+      - ./uploads:/app/uploads    # Persist uploaded files
+    environment:
+      - FLASK_ENV=production
