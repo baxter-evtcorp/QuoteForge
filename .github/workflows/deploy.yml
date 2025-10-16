@@ -1,0 +1,25 @@
+name: Deploy QuoteForge
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to remote server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        # Alternative: use password: ${{ secrets.PASSWORD }} instead of key
+        script: |
+          cd ~/QuoteForge
+          git pull origin master
+          docker-compose down
+          docker-compose up -d --build
+          echo "Deployment completed successfully!"
