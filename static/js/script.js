@@ -251,6 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (quote.document_type === 'quote') {
             document.getElementById('quote_name').value = quote.quote_name || '';
             document.getElementById('quote_date').value = quote.quote_date || '';
+            document.getElementById('status').value = quote.status || 'draft';
             
             // Clear and populate line items for quotes
             if (itemsContainer) {
@@ -294,6 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             setValue('po_name', quote.po_name);
             setValue('po_date', quote.po_date);
+            setValue('status', quote.status || 'draft');
             setValue('payment_terms', quote.payment_terms);
             setValue('shipping_name', quote.shipping_name);
             setValue('shipping_address', quote.shipping_address);
@@ -454,9 +456,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.document_type === 'quote') {
             data.quote_name = getValue('quote_name');
             data.quote_date = getValue('quote_date');
+            data.status = getValue('status') || 'draft';
         } else { // PO
             data.po_name = getValue('po_name');
             data.po_date = getValue('po_date');
+            data.status = getValue('status') || 'draft';
             data.payment_terms = getValue('payment_terms');
             data.shipping_name = getValue('shipping_name');
             data.shipping_address = getValue('shipping_address');

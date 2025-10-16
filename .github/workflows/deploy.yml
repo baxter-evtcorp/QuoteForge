@@ -7,19 +7,23 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # Use your own runner
     
     steps:
-    - name: Deploy to remote server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        # Alternative: use password: ${{ secrets.PASSWORD }} instead of key
-        script: |
-          cd ~/QuoteForge
-          git pull origin master
-          docker-compose down
-          docker-compose up -d --build
-          echo "Deployment completed successfully!"
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy QuoteForge
+      run: |
+        cd ~/QuoteForge
+        git pull origin master
+        docker stop quoteforge-web || true
+        docker rm quoteforge-web || true
+        docker build -t quoteforge:latest .
+        docker run -d -p 5000:5000 \
+          -v $(pwd):/app \
+          -v $(pwd)/instance:/app/instance \
+          -v $(pwd)/uploads:/app/uploads \
+          --name quoteforge-web \
+          quoteforge:latest
+        echo "Deployment completed successfully!"

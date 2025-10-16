@@ -58,6 +58,7 @@ def get_quotes():
         'document_type': quote.document_type,
         'quote_name': quote.quote_name,
         'po_name': quote.po_name,
+        'status': quote.status,
         'created_at': quote.created_at.strftime('%Y-%m-%d %H:%M:%S')
     } for quote in quotes])
 
@@ -74,6 +75,7 @@ def create_quote():
         quote_date=data.get('quote_date'),
         notes=data.get('notes'),
         doc_number=doc_number,
+        status=data.get('status', 'draft'),
         po_name=data.get('po_name'),
         po_date=data.get('po_date'),
         payment_terms=data.get('payment_terms'),
@@ -199,6 +201,7 @@ def get_quote(quote_id):
         'document_type': quote.document_type,
         'quote_name': quote.quote_name,
         'quote_date': quote.quote_date,
+        'status': quote.status,
         'notes': quote.notes,
         'doc_number': quote.doc_number,
         'po_name': quote.po_name,
@@ -246,6 +249,7 @@ def update_quote(quote_id):
     quote.document_type = data.get('document_type', quote.document_type)
     quote.quote_name = data.get('quote_name', quote.quote_name)
     quote.quote_date = data.get('quote_date', quote.quote_date)
+    quote.status = data.get('status', quote.status)
     quote.notes = data.get('notes', quote.notes)
     quote.po_name = data.get('po_name', quote.po_name)
     quote.po_date = data.get('po_date', quote.po_date)

@@ -175,9 +175,26 @@
             white-space: pre-wrap;
         }
         
+        /* Draft watermark styles */
+        .draft-watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 120px;
+            font-weight: bold;
+            color: rgba(255, 0, 0, 0.1);
+            z-index: -1;
+            pointer-events: none;
+            user-select: none;
+        }
+        
     </style>
 </head>
 <body>
+    {% if data.status == 'draft' %}
+        <div class="draft-watermark">DRAFT</div>
+    {% endif %}
         <header>
         <div class="header-left">
             <div class="company-and-supplier-info">
@@ -353,7 +370,21 @@
         {% endif %}
 
         <footer>
+            {% if data.status == 'draft' %}
+                <p><strong>DRAFT STATUS NOTICE:</strong><br>
+                {% if data.document_type == 'quote' %}
+                This quote is in DRAFT status and is not final. No purchase orders should be issued against this draft quote. This document is for review purposes only and subject to change.
+                {% else %}
+                This purchase order is in DRAFT status and is not executable. This document does not constitute a binding commitment and should not be acted upon until approved and finalized.
+                {% endif %}
+                </p>
+                {% if data.notes %}
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #ccc;">
+                {% endif %}
+            {% endif %}
+            {% if data.notes %}
             <p>{{ data.notes }}</p>
+            {% endif %}
         </footer>
     </main>
 </body>

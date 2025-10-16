@@ -10,6 +10,7 @@ class Quote(db.Model):
     notes = db.Column(db.Text, nullable=True)
     doc_number = db.Column(db.String(50), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), nullable=False, default='draft')  # draft, approved
 
     # Fields for PO
     po_name = db.Column(db.String(100), nullable=True)
