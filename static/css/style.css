@@ -103,11 +103,12 @@ textarea {
 
 .item-row {
     display: grid;
-    /* 6 data columns + 1 for the remove button */
-    grid-template-columns: 1.5fr 4fr 1.5fr 1fr 0.5fr 1fr auto;
-    gap: 10px;
+    /* 6 data columns + 1 for actions (copy, remove, drag) */
+    grid-template-columns: 1.5fr 4fr 1.5fr 1fr 0.8fr 1fr 120px;
+    gap: 12px;
     align-items: center;
     margin-bottom: 10px;
+    padding: 8px 0;
 }
 
 .item-header {
@@ -116,6 +117,38 @@ textarea {
     padding-bottom: 5px;
     border-bottom: 2px solid #eee;
     margin-bottom: 15px;
+}
+
+.item-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.item-actions button {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.item-actions button:hover {
+    background: #f8f9fa;
+    border-color: var(--primary-color);
+}
+
+.drag-handle {
+    cursor: grab;
+    color: #666;
+    font-size: 14px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
 }
 
 #items-container .section-header {

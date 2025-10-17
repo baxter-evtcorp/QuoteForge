@@ -57,6 +57,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const sectionItems = sectionBlock.querySelector('.section-items');
                 addItem({}, sectionItems);
                 ensureAllSectionsEditable();
+            } else if (e.target.classList.contains('copy-item-btn')) {
+                // Copy item functionality
+                const itemRow = e.target.closest('.item-row');
+                copyItem(itemRow);
             } else if (e.target.classList.contains('subcomponent-toggle-btn')) {
                 // Toggle subcomponents visibility
                 const itemRow = e.target.closest('.line-item');
@@ -94,7 +98,12 @@ document.addEventListener('DOMContentLoaded', function() {
     quoteListContainer.addEventListener('click', handleQuoteListActions);
 
     // View switching
-    newQuoteBtn.addEventListener('click', () => switchView('form'));
+    newQuoteBtn.addEventListener('click', () => {
+        resetForm();
+        currentQuoteId = null;
+        generatePdfBtn.textContent = 'Generate PDF';
+        switchView('form');
+    });
     manageDocsBtn.addEventListener('click', () => switchView('manage'));
 
     // --- Core Functions ---
@@ -349,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>Unit Price</span>
                     <span>Qty</span>
                     <span>Discounted Unit</span>
-                    <span></span>
+                    <span>Actions</span>
                 </div>
             </div>
             <div class="section-controls">
@@ -392,7 +401,6 @@ document.addEventListener('DOMContentLoaded', function() {
         targetSection.insertAdjacentHTML('beforeend', `
             <div class="item-wrapper" id="wrapper-${itemId}" draggable="true">
                 <div class="item-row line-item" id="${itemId}" data-type="item">
-                    <div class="item-drag-handle" title="Drag to move item">⋮⋮</div>
                     <input type="text" name="part_number[]" placeholder="Part #" value="${item.part_number || ''}">
                     <input type="text" name="description[]" placeholder="Description" value="${item.description || ''}">
                     <input type="text" name="item_type[]" placeholder="Type" value="${item.item_type || ''}">
@@ -400,8 +408,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="number" class="quantity" placeholder="Qty" value="${item.quantity || ''}">
                     <input type="number" class="discounted-price" placeholder="Discounted" step="0.01" value="${item.discounted_price || ''}">
                     <div class="item-actions">
+                        <button type="button" class="copy-item-btn" title="Copy Item">📄</button>
                         <button type="button" class="subcomponent-toggle-btn" title="Manage Subcomponents">📋</button>
-                        <button type="button" class="remove-btn remove-item-btn">Remove</button>
+                        <button type="button" class="remove-btn remove-item-btn" title="Remove Item">🗑️</button>
+                        <span class="drag-handle" title="Drag to move item">⋮⋮</span>
                     </div>
                 </div>
                 <div class="subcomponents-container" id="subcomponents-${itemId}" style="display: none;">
@@ -541,6 +551,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Copy and Reorder Functions ---
+    
+    function copyItem(itemRow) {
+        const sectionBlock = itemRow.closest('.section-block');
+        const sectionItems = sectionBlock.querySelector('.section-items');
+        
+        // Extract item data
+        const itemData = {
+            part_number: itemRow.querySelector('input[name="part_number[]"]').value,
+            description: itemRow.querySelector('input[name="description[]"]').value,
+            item_type: itemRow.querySelector('input[name="item_type[]"]').value,
+            unit_price: itemRow.querySelector('.unit-price').value,
+            quantity: itemRow.querySelector('.quantity').value,
+            discounted_price: itemRow.querySelector('.discounted-price').value
+        };
+        
+        // Add the copied item to the same section
+        addItem(itemData, sectionItems);
+        
+        // Copy subcomponents if they exist
+        const originalItemId = itemRow.id;
+        const subcomponentsList = document.querySelector(`#subcomponents-list-${originalItemId}`);
+        if (subcomponentsList && subcomponentsList.children.length > 0) {
+            // Get the newly created item ID
+            const newItemWrapper = sectionItems.lastElementChild;
+            const newItemId = newItemWrapper.querySelector('.item-row').id;
+            
+            // Copy each subcomponent
+            Array.from(subcomponentsList.children).forEach(subRow => {
+                const subData = {
+                    description: subRow.querySelector('input[name="subcomponent_description[]"]').value,
+                    quantity: subRow.querySelector('input[name="subcomponent_quantity[]"]').value
+                };
+                addSubcomponent(newItemId, subData);
+            });
+        }
+    }
     
     function copySection(sectionBlock) {
         const sectionTitle = sectionBlock.querySelector('.section-title').value;
@@ -811,10 +857,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Item drag and drop functionality
     function addItemDragAndDropListeners(itemElement) {
+        // Only allow dragging when drag handle is used
+        const dragHandle = itemElement.querySelector('.drag-handle');
+        if (dragHandle) {
+            dragHandle.addEventListener('mousedown', () => {
+                itemElement.draggable = true;
+            });
+            dragHandle.addEventListener('mouseup', () => {
+                itemElement.draggable = false;
+            });
+        }
+        
         itemElement.addEventListener('dragstart', handleItemDragStart);
         itemElement.addEventListener('dragover', handleItemDragOver);
         itemElement.addEventListener('drop', handleItemDrop);
         itemElement.addEventListener('dragend', handleItemDragEnd);
+        
+        // Disable dragging by default (only enable when drag handle is used)
+        itemElement.draggable = false;
         
         // Also add drop listeners to section containers to allow dropping between sections
         document.querySelectorAll('.section-items').forEach(sectionItems => {
