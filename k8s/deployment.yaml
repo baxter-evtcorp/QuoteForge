@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quoteforge
+  namespace: quoteforge
+  labels:
+    app: quoteforge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quoteforge
+  template:
+    metadata:
+      labels:
+        app: quoteforge
+    spec:
+      containers:
+        - name: quoteforge
+          image: quoteforge:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          env:
+            - name: FLASK_ENV
+              value: production
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: db-storage
+              mountPath: /app/instance
+            - name: upload-storage
+              mountPath: /app/uploads
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: quoteforge-db
+        - name: upload-storage
+          persistentVolumeClaim:
+            claimName: quoteforge-uploads
