@@ -200,8 +200,6 @@
             <div class="company-and-supplier-info">
                 {% if data.logo_base64 %}
                     <img src="data:image/png;base64,{{ data.logo_base64 }}" alt="Company Logo" class="logo">
-                {% else %}
-                    <img src="{{ url_for('static', filename='images/EVT_logo_HiRes.jpg', _external=True) }}" alt="Company Logo" class="logo">
                 {% endif %}
                 <div class="supplier-info">
                     {% if data.document_type == 'po' %}

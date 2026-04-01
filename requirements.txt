@@ -2,3 +2,4 @@ Flask
 WeasyPrint
 Flask-SQLAlchemy
 python-dateutil
+gunicorn

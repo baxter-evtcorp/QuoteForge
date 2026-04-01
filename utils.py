@@ -1,13 +1,17 @@
 import os
 import csv
+import uuid
 from datetime import datetime, timezone
 
 LOG_DIR = 'logs'
 
+
 def generate_id(prefix: str) -> str:
-    """Generates a unique ID with a given prefix and UTC timestamp."""
+    """Generates a unique ID: prefix + MMDD + 4 hex chars (e.g. EVTQ0401-7B2D)."""
     utc_now = datetime.now(timezone.utc)
-    return f"{prefix}{utc_now.strftime('%Y%m%d%H%M%S')}"
+    suffix = uuid.uuid4().hex[:4].upper()
+    return f"{prefix}{utc_now.strftime('%m%d')}-{suffix}"
+
 
 def log_id(id_type: str, unique_id: str):
     """Logs the generated ID to a CSV file in the logs directory."""

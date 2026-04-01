@@ -31,7 +31,6 @@ EXPOSE 5000
 
 # Define environment variable
 ENV FLASK_APP=app.py
-ENV FLASK_RUN_HOST=0.0.0.0
 
-# Run the command to start the Flask application
-CMD ["flask", "run"]
+# Run with gunicorn for production
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
