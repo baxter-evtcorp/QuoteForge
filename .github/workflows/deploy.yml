@@ -16,7 +16,8 @@ jobs:
     - name: Deploy QuoteForge
       run: |
         cd ~/QuoteForge
-        git pull origin master
+        git fetch origin master
+        git reset --hard origin/master
         docker stop quoteforge-web || true
         docker rm quoteforge-web || true
         docker build -t quoteforge:latest .
