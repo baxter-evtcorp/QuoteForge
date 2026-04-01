@@ -234,6 +234,11 @@ def generate_pdf(quote_id):
         if os.path.exists(logo_path):
             with open(logo_path, "rb") as image_file:
                 logo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+    if not logo_base64:
+        default_logo = os.path.join(app.static_folder, 'images', 'EVT_logo_HiRes.jpg')
+        if os.path.exists(default_logo):
+            with open(default_logo, "rb") as image_file:
+                logo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
     data['logo_base64'] = logo_base64
 
     if quote.document_type == 'quote' and quote.quote_date:
