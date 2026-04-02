@@ -30,6 +30,12 @@ class Quote(db.Model):
     end_user_contact = db.Column(db.String(100), nullable=True)
     po_amount = db.Column(db.String(50), nullable=True)
 
+    # Customer-specific identifiers (e.g., Walmart requires Supplier #, CW #, MA #)
+    customer_name = db.Column(db.String(200), nullable=True)
+    supplier_number = db.Column(db.String(100), nullable=True)
+    cw_number = db.Column(db.String(100), nullable=True)
+    ma_number = db.Column(db.String(100), nullable=True)
+
     items = db.relationship('LineItem', backref='quote', lazy=True, cascade="all, delete-orphan")
 
 class LineItem(db.Model):
@@ -52,3 +58,11 @@ class Subcomponent(db.Model):
     line_item_id = db.Column(db.Integer, db.ForeignKey('line_item.id'), nullable=False)
     description = db.Column(db.String(200), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
+
+class ManufacturerMapping(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    manufacturer_name = db.Column(db.String(200), unique=True, nullable=False)
+    column_map = db.Column(db.Text, nullable=False)  # JSON: {"source_col": "evt_field", ...}
+    file_format_hints = db.Column(db.Text, nullable=True)  # JSON: learned patterns
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

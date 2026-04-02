@@ -1,0 +1,451 @@
+/* Import Wizard Styles */
+
+.wizard-progress {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 2rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.wizard-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.5rem;
+    color: #999;
+    position: relative;
+}
+
+.wizard-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -1rem;
+    width: 2rem;
+    height: 2px;
+    background: var(--border-color);
+    top: 50%;
+}
+
+.wizard-step.active {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.wizard-step.completed {
+    color: #28a745;
+}
+
+.step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.wizard-step.active .step-number {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.wizard-step.completed .step-number {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.step-label {
+    font-size: 0.9rem;
+}
+
+/* Panels */
+.wizard-panel {
+    animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Info Banner */
+.info-banner {
+    background: #e8f4fd;
+    border: 1px solid #b8daff;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    color: #004085;
+    font-size: 0.9rem;
+}
+
+.info-banner.success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.info-banner.warning {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.info-banner.error {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Helper text */
+.helper-text {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* Data Tables */
+.table-container {
+    overflow-x: auto;
+    margin: 1rem 0;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.data-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #555;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.data-table tbody tr:hover {
+    background: #f5f8ff;
+}
+
+.data-table.editable td input {
+    width: 100%;
+    border: 1px solid transparent;
+    padding: 0.3rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    background: transparent;
+}
+
+.data-table.editable td input:focus {
+    border-color: var(--primary-color);
+    background: white;
+    outline: none;
+}
+
+.data-table .total-row td {
+    border-top: 2px solid var(--text-color);
+    border-bottom: none;
+    font-size: 1rem;
+    padding: 0.75rem;
+}
+
+/* Mapping Section */
+.mapping-section {
+    margin: 1.5rem 0;
+}
+
+.mapping-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.mapping-row:last-child {
+    border-bottom: none;
+}
+
+.mapping-source {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.mapping-arrow {
+    color: #999;
+    font-size: 1.2rem;
+}
+
+.mapping-target {
+    flex: 1;
+}
+
+.mapping-target select {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: white;
+}
+
+.mapping-confidence {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.confidence-high {
+    background: #d4edda;
+    color: #155724;
+}
+
+.confidence-medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.confidence-low {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Pricing Options */
+.pricing-options {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.pricing-option {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.pricing-option:hover {
+    border-color: var(--primary-color);
+}
+
+.pricing-option input[type="radio"]:checked ~ .option-content {
+    color: var(--primary-color);
+}
+
+.pricing-option:has(input:checked) {
+    border-color: var(--primary-color);
+    background: #f0f6ff;
+}
+
+.option-content strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.option-content p {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+}
+
+.pricing-input {
+    margin: 1.5rem 0;
+}
+
+.pricing-input label {
+    font-weight: 500;
+    margin-right: 0.75rem;
+}
+
+.pricing-input input[type="number"] {
+    width: 100px;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.category-margin-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+
+.category-margin-row label {
+    min-width: 200px;
+    font-weight: 500;
+}
+
+/* Price History */
+.price-history-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.price-history-section h3 {
+    margin-bottom: 0.75rem;
+}
+
+#price-search-results {
+    margin-top: 0.75rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.price-result {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.85rem;
+}
+
+.price-result:hover {
+    background: #f5f8ff;
+}
+
+/* Buttons */
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.primary-btn {
+    background: var(--primary-color);
+    color: var(--button-text);
+    border: none;
+    padding: 0.7rem 2rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.primary-btn:hover {
+    background: #357abd;
+}
+
+.primary-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.secondary-btn {
+    background: white;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s;
+}
+
+.secondary-btn:hover {
+    background: #f8f9fa;
+}
+
+/* Status Messages */
+.status-message {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.status-message.loading {
+    color: var(--primary-color);
+}
+
+.status-message.error {
+    color: #dc3545;
+}
+
+.status-message.success {
+    color: #28a745;
+}
+
+/* Remove button in review table */
+.remove-row-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+}
+
+.remove-row-btn:hover {
+    background: #f8d7da;
+}
+
+/* Customer IDs expandable section */
+.customer-ids-section {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.customer-ids-section summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.customer-ids-section[open] summary {
+    margin-bottom: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pricing-options {
+        flex-direction: column;
+    }
+
+    .wizard-progress {
+        gap: 0.25rem;
+    }
+
+    .wizard-step {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .step-label {
+        display: none;
+    }
+}

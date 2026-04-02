@@ -20,6 +20,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Initial Load ---
     loadQuotes();
+
+    // Check if we should show manage view (e.g., after import redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'manage') {
+        switchView('manage');
+    }
     updateViewButtons();
 
     // --- Event Listeners ---
@@ -37,6 +43,21 @@ document.addEventListener('DOMContentLoaded', function() {
         addSectionBtn.addEventListener('click', () => {
             addSection();
             ensureAllSectionsEditable();
+        });
+
+        // Auto-recalculate extended price when qty or unit price changes
+        itemsContainer.addEventListener('input', function(e) {
+            if (e.target.classList.contains('quantity') || e.target.classList.contains('discounted-price')) {
+                const lineItem = e.target.closest('.line-item');
+                if (lineItem) {
+                    const qty = parseFloat(lineItem.querySelector('.quantity').value) || 0;
+                    const price = parseFloat(lineItem.querySelector('.discounted-price').value) || 0;
+                    const extDisplay = lineItem.closest('.item-wrapper').querySelector('.extended-display');
+                    if (extDisplay) {
+                        extDisplay.textContent = '$' + (qty * price).toFixed(2);
+                    }
+                }
+            }
         });
 
         itemsContainer.addEventListener('click', function(e) {
@@ -354,10 +375,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="item-row item-header">
                     <span>Part #</span>
                     <span>Description</span>
-                    <span>Type</span>
-                    <span>Unit Price</span>
                     <span>Qty</span>
-                    <span>Discounted Unit</span>
+                    <span>Unit Price</span>
+                    <span>Extended Price</span>
                     <span>Actions</span>
                 </div>
             </div>
@@ -403,10 +423,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="item-row line-item" id="${itemId}" data-type="item">
                     <input type="text" name="part_number[]" placeholder="Part #" value="${item.part_number || ''}">
                     <input type="text" name="description[]" placeholder="Description" value="${item.description || ''}">
-                    <input type="text" name="item_type[]" placeholder="Type" value="${item.item_type || ''}">
-                    <input type="number" class="unit-price" placeholder="Unit Price" step="0.01" value="${item.unit_price || ''}">
-                    <input type="number" class="quantity" placeholder="Qty" value="${item.quantity || ''}">
-                    <input type="number" class="discounted-price" placeholder="Discounted" step="0.01" value="${item.discounted_price || ''}">
+                    <input type="number" class="quantity" placeholder="Qty" value="${item.quantity || ''}" min="1">
+                    <input type="number" class="discounted-price" placeholder="Unit Price" step="0.01" value="${item.discounted_price || ''}">
+                    <span class="extended-display">$${(((parseFloat(item.discounted_price) || 0) * (parseInt(item.quantity) || 0)).toFixed(2))}</span>
+                    <input type="hidden" class="unit-price" value="${item.unit_price || ''}">
+                    <input type="hidden" name="item_type[]" value="${item.item_type || ''}">
                     <div class="item-actions">
                         <button type="button" class="copy-item-btn" title="Copy Item">📄</button>
                         <button type="button" class="subcomponent-toggle-btn" title="Manage Subcomponents">📋</button>

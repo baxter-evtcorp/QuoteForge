@@ -103,8 +103,8 @@ textarea {
 
 .item-row {
     display: grid;
-    /* 6 data columns + 1 for actions (copy, remove, drag) */
-    grid-template-columns: 1.5fr 4fr 1.5fr 1fr 0.8fr 1fr 120px;
+    /* Part#, Description, Qty, Unit Price, Extended Price, Actions */
+    grid-template-columns: 1.5fr 4fr 0.8fr 1.2fr 1.2fr 120px;
     gap: 12px;
     align-items: center;
     margin-bottom: 10px;
@@ -373,6 +373,13 @@ textarea {
 .quote-info .quote-details {
     font-size: 0.875rem;
     color: #666;
+}
+
+.extended-display {
+    font-size: 12px;
+    text-align: center;
+    color: #555;
+    padding: 8px;
 }
 
 .section-block {

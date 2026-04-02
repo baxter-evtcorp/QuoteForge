@@ -1,5 +1,9 @@
 Flask
-WeasyPrint
+fpdf2
 Flask-SQLAlchemy
 python-dateutil
 gunicorn
+openpyxl
+pdfplumber
+anthropic
+python-dotenv

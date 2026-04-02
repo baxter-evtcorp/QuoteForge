@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuoteForge - Import Manufacturer Quote</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/import.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QuoteForge</h1>
+            <p>Import Manufacturer Quote</p>
+        </header>
+        <main>
+            <div class="action-bar">
+                <a href="/" class="secondary-btn">Back to Quotes</a>
+            </div>
+
+            <!-- Progress Steps -->
+            <div class="wizard-progress">
+                <div class="wizard-step active" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-label">Upload</span>
+                </div>
+                <div class="wizard-step" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-label">Map Columns</span>
+                </div>
+                <div class="wizard-step" data-step="3">
+                    <span class="step-number">3</span>
+                    <span class="step-label">Pricing</span>
+                </div>
+                <div class="wizard-step" data-step="4">
+                    <span class="step-number">4</span>
+                    <span class="step-label">Review & Create</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Upload -->
+            <div id="step-1" class="wizard-panel">
+                <div class="form-section">
+                    <h2>Upload Manufacturer Quote</h2>
+                    <div class="form-row">
+                        <label for="manufacturer-name">Manufacturer:</label>
+                        <input type="text" id="manufacturer-name" placeholder="e.g., Cisco, Dell, Pure Storage" list="manufacturer-list">
+                        <datalist id="manufacturer-list"></datalist>
+                    </div>
+                    <div class="form-row">
+                        <label for="import-file">File:</label>
+                        <input type="file" id="import-file" accept=".csv,.tsv,.txt,.xlsx,.xls,.pdf">
+                    </div>
+                    <div id="saved-mapping-banner" class="info-banner" style="display: none;">
+                        Saved mapping found! Column mapping will be auto-applied.
+                    </div>
+                    <button type="button" id="upload-btn" class="primary-btn">Upload & Parse</button>
+                    <div id="upload-status" class="status-message"></div>
+                </div>
+            </div>
+
+            <!-- Step 2: Column Mapping -->
+            <div id="step-2" class="wizard-panel" style="display: none;">
+                <div class="form-section">
+                    <h2>Map Columns</h2>
+                    <p class="helper-text">Match the manufacturer's columns to your EVT quote fields. AI suggestions are pre-filled where confident.</p>
+
+                    <div id="ai-status" class="info-banner" style="display: none;"></div>
+
+                    <!-- Preview Table -->
+                    <div class="table-container">
+                        <table id="preview-table" class="data-table">
+                            <thead id="preview-header"></thead>
+                            <tbody id="preview-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mapping Controls -->
+                    <div id="mapping-controls" class="mapping-section">
+                        <h3>Column Assignments</h3>
+                        <div id="mapping-dropdowns"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>
+                            <input type="checkbox" id="save-mapping-checkbox" checked>
+                            Save mapping for future imports from this manufacturer
+                        </label>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="button" class="secondary-btn" onclick="goToStep(1)">Back</button>
+                        <button type="button" id="apply-mapping-btn" class="primary-btn">Continue</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Pricing -->
+            <div id="step-3" class="wizard-panel" style="display: none;">
+                <div class="form-section">
+                    <h2>Pricing Strategy</h2>
+                    <p class="helper-text">Set your margin on the manufacturer's cost prices.</p>
+
+                    <div class="pricing-options">
+                        <label class="pricing-option">
+                            <input type="radio" name="pricing-mode" value="global" checked>
+                            <div class="option-content">
+                                <strong>Global Margin %</strong>
+                                <p>Apply the same margin to all items</p>
+                            </div>
+                        </label>
+                        <label class="pricing-option">
+                            <input type="radio" name="pricing-mode" value="category">
+                            <div class="option-content">
+                                <strong>Per-Category Margin</strong>
+                                <p>Different margin for each item category</p>
+                            </div>
+                        </label>
+                        <label class="pricing-option">
+                            <input type="radio" name="pricing-mode" value="per-item">
+                            <div class="option-content">
+                                <strong>Per-Item</strong>
+                                <p>Set pricing individually in the review step</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="global-margin-input" class="pricing-input">
+                        <label for="global-margin">Margin %:</label>
+                        <input type="number" id="global-margin" value="15" min="0" max="100" step="0.5">
+                    </div>
+
+                    <div id="category-margin-inputs" class="pricing-input" style="display: none;">
+                        <h3>Category Margins</h3>
+                        <div id="category-margins-container"></div>
+                    </div>
+
+                    <!-- Price History Search -->
+                    <div class="price-history-section">
+                        <h3>Price History</h3>
+                        <div class="form-row">
+                            <input type="text" id="price-search" placeholder="Search past quotes for pricing reference...">
+                            <button type="button" id="price-search-btn" class="secondary-btn">Search</button>
+                        </div>
+                        <div id="price-search-results"></div>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="button" class="secondary-btn" onclick="goToStep(2)">Back</button>
+                        <button type="button" id="apply-pricing-btn" class="primary-btn">Apply & Review</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Review & Create -->
+            <div id="step-4" class="wizard-panel" style="display: none;">
+                <div class="form-section">
+                    <h2>Review & Create Quote</h2>
+
+                    <div class="form-row">
+                        <label for="new-quote-name">Quote Name:</label>
+                        <input type="text" id="new-quote-name" placeholder="Quote name">
+                    </div>
+                    <div class="form-row">
+                        <label for="new-customer-name">End Customer:</label>
+                        <input type="text" id="new-customer-name" placeholder="e.g., Walmart, Inc.">
+                    </div>
+                    <div class="form-row">
+                        <label for="new-section-name">Section Name:</label>
+                        <input type="text" id="new-section-name" placeholder="Section header for line items">
+                    </div>
+                    <div class="form-row">
+                        <label for="new-status">Status:</label>
+                        <select id="new-status">
+                            <option value="draft">Draft</option>
+                            <option value="approved">Approved</option>
+                        </select>
+                    </div>
+
+                    <details class="customer-ids-section">
+                        <summary>Customer IDs (Supplier #, CW #, MA #)</summary>
+                        <div class="form-row">
+                            <label for="new-supplier-number">Supplier #:</label>
+                            <input type="text" id="new-supplier-number" placeholder="e.g., 1206055">
+                        </div>
+                        <div class="form-row">
+                            <label for="new-cw-number">CW #:</label>
+                            <input type="text" id="new-cw-number" placeholder="e.g., CW482112">
+                        </div>
+                        <div class="form-row">
+                            <label for="new-ma-number">MA #:</label>
+                            <input type="text" id="new-ma-number" placeholder="e.g., MA-0010777-2014">
+                        </div>
+                    </details>
+
+                    <div class="table-container">
+                        <table id="review-table" class="data-table editable">
+                            <thead>
+                                <tr>
+                                    <th>Part #</th>
+                                    <th>Description</th>
+                                    <th>Qty</th>
+                                    <th>Unit Price</th>
+                                    <th>Extended Price</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="review-body"></tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="4"><strong>Total:</strong></td>
+                                    <td id="review-total"><strong>$0.00</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="form-section">
+                        <label for="new-quote-notes">Notes / Footer:</label>
+                        <textarea id="new-quote-notes" placeholder="Terms and conditions, notes, etc."></textarea>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="button" class="secondary-btn" onclick="goToStep(3)">Back</button>
+                        <button type="button" id="create-quote-btn" class="primary-btn">Create EVT Quote</button>
+                    </div>
+
+                    <div id="create-status" class="status-message"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/import.js') }}"></script>
+</body>
+</html>

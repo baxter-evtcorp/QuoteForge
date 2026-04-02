@@ -122,14 +122,11 @@
             padding-left: 15px;
         }
         .items-table .part-number, .items-table .quantity { text-align: center; }
-        .items-table .unit-price { text-align: right; }
-        .items-table .discounted-price, .items-table .extended-price { text-align: center; }
-        .items-table .description { width: 33%; }
-        .items-table .part-number { width: 12%; }
-        .items-table .item-type { width: 9%; }
-        .items-table .unit-price { width: 13%; }
-        .items-table .quantity { width: 7%; }
-        .items-table .discounted-price { width: 13%; }
+        .items-table .unit-price, .items-table .extended-price { text-align: right; }
+        .items-table .description { width: 45%; }
+        .items-table .part-number { width: 18%; }
+        .items-table .unit-price { width: 14%; }
+        .items-table .quantity { width: 9%; }
         .items-table .extended-price { width: 14%; }
         .items-table td { word-wrap: break-word; }
         .subtotal-row td {
@@ -285,7 +282,7 @@
                         {% if table_open.value %}
                             {# End the previous table body and table #}
                             <tr class="subtotal-row">
-                                <td colspan="6" class="subtotal-label">Section Subtotal:</td>
+                                <td colspan="4" class="subtotal-label">Section Subtotal:</td>
                                 <td class="subtotal-value">${{ "{:,.2f}".format(section_total.value) }}</td>
                             </tr>
                             </tbody>
@@ -300,10 +297,8 @@
                                 <tr>
                                     <th class="part-number">Part #</th>
                                     <th class="description">Description</th>
-                                    <th class="item-type">Type</th>
-                                    <th class="unit-price">Unit Price</th>
                                     <th class="quantity">Qty</th>
-                                    <th class="discounted-price">Discounted Price</th>
+                                    <th class="unit-price">Unit Price</th>
                                     <th class="extended-price">Extended Price</th>
                                 </tr>
                             </thead>
@@ -313,10 +308,8 @@
                         <tr>
                             <td class="part-number">{{ item.part_number or '' }}</td>
                             <td class="description">{{ item.description or '' }}</td>
-                            <td>{{ item.item_type or '' }}</td>
-                            <td class="unit-price">${{ "{:,.2f}".format(item.unit_price|float) }}</td>
                             <td class="quantity">{{ item.quantity }}</td>
-                            <td class="discounted-price">${{ "{:,.2f}".format(item.discounted_price|float) }}</td>
+                            <td class="unit-price">${{ "{:,.2f}".format(item.discounted_price|float) }}</td>
                             <td class="extended-price">${{ "{:,.2f}".format(item.extended_price|float) }}</td>
                         </tr>
                         {% if item.subcomponents %}
@@ -324,10 +317,8 @@
                                 <tr class="subcomponent-row">
                                     <td class="part-number"></td>
                                     <td class="description subcomponent-desc">↳ {{ subcomponent.description }}</td>
-                                    <td></td>
-                                    <td class="unit-price"></td>
                                     <td class="quantity">{{ subcomponent.quantity }}</td>
-                                    <td class="discounted-price"></td>
+                                    <td class="unit-price"></td>
                                     <td class="extended-price"></td>
                                 </tr>
                             {% endfor %}
@@ -340,7 +331,7 @@
                 {% if table_open.value %}
                 {# Close the last section's table #}
                 <tr class="subtotal-row">
-                    <td colspan="6" class="subtotal-label">Section Subtotal:</td>
+                    <td colspan="4" class="subtotal-label">Section Subtotal:</td>
                     <td class="subtotal-value">${{ "{:,.2f}".format(section_total.value) }}</td>
                 </tr>
                 </tbody>
@@ -351,7 +342,7 @@
             <table class="grand-total-table">
                 <tfoot>
                     <tr>
-                        <td colspan="6" class="total-label">Grand Total:</td>
+                        <td colspan="4" class="total-label">Grand Total:</td>
                         <td class="total-value">${{ "{:,.2f}".format(grand_total.value) }}</td>
                     </tr>
                 </tfoot>
